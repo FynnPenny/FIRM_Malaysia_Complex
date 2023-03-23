@@ -5,51 +5,81 @@
 
 import numpy as np
 
-def Reliability(solution, flexible, start=None, end=None):
+def Reliability(solution, flexible, gas, start=None, end=None):
     """Deficit = Simulation.Reliability(S, hydro=...)"""
 
     Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GWind.sum(axis=1) - solution.GBaseload.sum(axis=1))[start:end] \
-              - flexible # Sj-ENLoad(j, t), MW
-
+              - flexible - gas # Sj-ENLoad(j, t), MW
     length = len(Netload)
+    
     solution.flexible = flexible # MW
+    solution.gas = gas
 
-    Pcapacity = sum(solution.CPHP) * pow(10, 3) # S-CPHP(j), GW to MW
-    Scapacity = solution.CPHS * pow(10, 3) # S-CPHS(j), GWh to MWh
-    PcapacityD = sum(solution.CDP) * pow(10, 3) # S-CDP(j), GW to MW
-    ScapacityD = sum(solution.CDS) * pow(10, 3) # S-CDS(j), GWh to MWh
-    efficiency, efficiencyD, resolution = (solution.efficiency, solution.efficiencyD, solution.resolution)
+    Pcapacity_PH = sum(solution.CPHP) * pow(10, 3) # S-CPHP(j), GW to MW
+    Pcapacity_B = sum(solution.CBP) * pow(10,3)
+    Scapacity_PH = solution.CPHS * pow(10, 3) # S-CPHS(j), GWh to MWh
+    Scapacity_B = solution.CBS * pow(10,3)
+    efficiencyPH, efficiencyB, resolution = (solution.efficiencyPH, solution.efficiencyB, solution.resolution)
 
-    Discharge, Charge, Storage, DischargeD, ChargeD, StorageD, P2V = map(np.zeros, [length] * 7)
-    ConsumeD = solution.MLoadD.sum(axis=1)[start:end] * efficiencyD
+    DischargePH, ChargePH, StoragePH, DischargeB, ChargeB, StorageB = map(np.zeros, [length] * 6)
+    Deficit_energy, Deficit_power = map(np.zeros, [length] * 2)
 
     for t in range(length):
 
         Netloadt = Netload[t]
-        Storaget_1 = Storage[t-1] if t>0 else 0.5 * Scapacity
-        StorageDt_1 = StorageD[t-1] if t>0 else 0.5 * ScapacityD
+        StoragePH_t1 = Storage[t-1] if t>0 else 0.5 * Scapacity_PH
+        StorageB_t1 = StorageB[t-1] if t>0 else 0.5 * Scapacity_B
 
-        Discharget = min(max(0, Netloadt), Pcapacity, Storaget_1 / resolution)
-        Charget = min(-1 * min(0, Netloadt), Pcapacity, (Scapacity - Storaget_1) / efficiency / resolution)
-        Storaget = Storaget_1 - Discharget * resolution + Charget * resolution * efficiency
+        ##### THIS BLOCK DOES NOT MAKE SENSE CURRENTLY. BASED ON ENTIRE NET LOAD FOR BOTH STORAGE SYSTEMS - SHOULD BE APPORTIONED BETWEEN EACH
+        ##### SHOULD TEST ONE STORAGE SYSTEM, THEN BALANCE REMAINING NET LOAD WITH THE OTHER
+        ##### THEN OVERAL DEFICIT AT THE END SHOULD BE DETERMINED
+        Discharge_PH_t = min(max(0, Netloadt), Pcapacity_PH, Storage_PH_t1 / resolution)
+        Charge_PH_t = min(-1 * min(0, Netloadt), Pcapacity_PH, (Scapacity_PH - Storage_PH_t1) / efficiencyPH / resolution)
+        Storage_PH_t = Storage_PH_t1 - Discharge_PH_t * resolution + Charge_PH_t * resolution * efficiencyPH
+        
+        Discharge_B_t = min(max(0, Netloadt), Pcapacity_B, Storage_B_t1 / resolution)
+        Charge_B_t = min(-1 * min(0, Netloadt), Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution)
+        Storage_B_t = Storage_B_t1 - Discharge_B_t * resolution + Charge_B_t * resolution * efficiencyB
 
-        ConsumeDt = ConsumeD[t]
+        Discharge_PH[t] = Discharge_PH_t
+        Charge_PH[t] = Charge_PH_t
+        StoragePH[t] = Storage_PH_t
 
-        DischargeDt = min(ConsumeDt, StorageDt_1 / resolution)
-        ChargeDt = min(-1 * min(0, Netloadt + Charget), PcapacityD, (ScapacityD - StorageDt_1) / efficiencyD / resolution)
-        StorageDt = StorageDt_1 - DischargeDt * resolution + ChargeDt * resolution * efficiencyD
+        Discharge_B[t] = Discharge_B_t
+        Charge_B[t] = Charge_B_t
+        StorageB[t] = Storage_B_t
 
-        diff = ConsumeDt - DischargeDt
-        P2Vt = min(diff / efficiencyD, Pcapacity - Discharget - Charget) if diff > 0 and Storaget / resolution > diff / efficiencyD else 0
-
-        Discharge[t] = Discharget + P2Vt
-        P2V[t] = P2Vt
-        Charge[t] = Charget
-        Storage[t] = Storaget - P2Vt * resolution
-
-        DischargeD[t] = DischargeDt
-        ChargeD[t] = ChargeDt
-        StorageD[t] = StorageDt
+        diff = Netloadt - Discharge_PH_t - Discharge_B_t
+        
+        ##### TO FIX: SPLIT DEFICIT ENERGY AND POWER BASED ON WHICH SYSTEM EXPERIENCES A PARTICULAR DEFICIT
+        if diff <= 0:
+            Deficit_energy[t] = 0
+            Deficit_power[t] = 0
+        elif ((Discharge_PH_t == Pcapacity_PH) and (Discharge_B_t == Pcapacity_B)):
+            Deficit_energy[t] = 0
+            Deficit_power[t] = diff
+        elif ((Discharge_PH_t == Storage_PH_t_1 / resolution) and (Discharge_B_t == Storage_B_t_1 / resolution)):
+            Deficit_energy[t] = diff
+            Deficit_power[t] = 0
+        elif ((Discharge_PH_t == Pcapacity_PH) and (Discharge_B_t == Storage_B_t_1 / resolution)):
+            Deficit_energy[t] = # B energy deficit
+            Deficit_power[t] = # PH power deficit 
+        elif ((Discharge_PH_t == Storage_PH_t_1 / resolution) and (Discharge_B_t == Pcapacity_B)):
+            Deficit_energy[t] = # PH energy deficit
+            Deficit_power[t] = # B power deficit
+        elif ((Discharge_PH_t == Storage_PH_t_1 / resolution) and (Discharge_B_t == Pcapacity_B)):
+            Deficit_energy[t] = # PH energy deficit
+            Deficit_power[t] = 0
+        elif ((Discharge_PH_t == Storage_PH_t_1 / resolution) and (Discharge_B_t == Pcapacity_B)):
+            Deficit_energy[t] = 0
+            Deficit_power[t] = # PH power deficit
+        elif ((Discharge_PH_t == Storage_PH_t_1 / resolution) and (Discharge_B_t == Pcapacity_B)):
+            Deficit_energy[t] = # B energy deficit
+            Deficit_power[t] = 0
+        elif ((Discharge_PH_t == Storage_PH_t_1 / resolution) and (Discharge_B_t == Pcapacity_B)):
+            Deficit_energy[t] = 0
+            Deficit_power[t] = # B power deficit
+        
 
     Deficit = np.maximum(Netload - Discharge + P2V, 0)
     DeficitD = ConsumeD - DischargeD - P2V * efficiencyD
