@@ -8,20 +8,31 @@ import numpy as np
 def Transmission(solution, output=False):
     """TDC = Network.Transmission(S)"""
 
-    Nodel, PVl, Windl = (solution.Nodel, solution.PVl, solution.Windl)
+    Nodel, PVl, Windl, Interl = (solution.Nodel, solution.PVl, solution.Windl, solution.Interl)
     intervals, nodes = (solution.intervals, solution.nodes)
 
-    MPV, MWind = map(np.zeros, [(nodes, intervals)] * 2)
+    MPV, MWind, MInter = map(np.zeros, [(nodes, intervals)] * 3)
     for i, j in enumerate(Nodel):
         MPV[i, :] = solution.GPV[:, np.where(PVl==j)[0]].sum(axis=1)
         MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
-    MPV, MWind = (MPV.transpose(), MWind.transpose()) # Sij-GPV(t, i), Sij-GWind(t, i), MW
+        if solution.node=='APG':
+            MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)
+    MPV, MWind, MInter = (MPV.transpose(), MWind.transpose(), MInter.transpose()) # Sij-GPV(t, i), Sij-GWind(t, i), MW
 
+    ###### TO FIX: DOUBLE CHECK THIS
     MBaseload = solution.GBaseload # MW
     CPeak = solution.CPeak # GW
     pkfactor = np.tile(CPeak, (intervals, 1)) / CPeak.sum()
     MPeak = np.tile(solution.flexible, (nodes, 1)).transpose() * pkfactor # MW
 
+    CGas = np.nan_to_num(np.array(solution.CGas)) # GW
+    gas = solution.gas # MW
+    if CGas.sum() == 0:
+        gfactor = np.tile(CGas, (intervals, 1))
+    else:
+        gfactor = np.tile(CGas, (intervals, 1)) / CGas.sum()
+    MGas = np.tile(gas, (nodes, 1)).transpose() * gfactor
+    
     MLoad = solution.MLoad # EOLoad(t, j), MW
 
     defactor = MLoad / MLoad.sum(axis=1)[:, None]
@@ -33,39 +44,49 @@ def Transmission(solution, output=False):
 
     CPHP = solution.CPHP
     pcfactor = np.tile(CPHP, (intervals, 1)) / sum(CPHP) if sum(CPHP) != 0 else 0
-    MDischarge = np.tile(solution.Discharge, (nodes, 1)).transpose() * pcfactor # MDischarge: DPH(j, t)
-    MCharge = np.tile(solution.Charge, (nodes, 1)).transpose() * pcfactor # MCharge: CHPH(j, t)
+    MDischargePH = np.tile(solution.DischargePH, (nodes, 1)).transpose() * pcfactor # MDischarge: DPH(j, t)
+    MChargePH = np.tile(solution.ChargePH, (nodes, 1)).transpose() * pcfactor # MCharge: CHPH(j, t)
 
-    MP2V = np.tile(solution.P2V, (nodes, 1)).transpose() * pcfactor # MP2V: DP2V(j, t)
+    CBP = solution.CBP
+    bfactor = np.tile(CBP, (intervals, 1)) / sum(CBP) if sum(CBP) != 0 else 0
+    MDischargeB = np.tile(solution.DischargeB, (nodes, 1)).transpose() * bfactor # MDischarge: DPH(j, t)
+    MChargeB = np.tile(solution.ChargeB, (nodes, 1)).transpose() * bfactor # MCharge: CHPH(j, t)
 
-    CDP = solution.CDP
-    pcfactorD = np.tile(CDP, (intervals, 1)) / sum(CDP) if sum(CDP) != 0 else 0
-    MChargeD = np.tile(solution.ChargeD, (nodes, 1)).transpose() * pcfactorD # MChargeD: CHD(j, t)
+    MImport = MLoad + MChargePH + MChargeB + MSpillage \
+              - MPV - MWind - MInter - MBaseload - MPeak - MGas - MDischargePH - MDischargeB - MDeficit # EIM(t, j), MW
 
-    MImport = MLoad + MCharge + MChargeD + MSpillage \
-              - MPV - MWind - MBaseload - MPeak - MDischarge + MP2V - MDeficit # EIM(t, j), MW
+    # Imorts into external nodes
+    THKD = MImport[:, np.where(Nodel=='TH')[0][0]]
+    PHSB = MImport[:, np.where(Nodel=='PH')[0][0]]
+    INSE = -1 * MImport[:, np.where(Nodel=='IN')[0][0]]
 
-    FQ = -1 * MImport[:, np.where(Nodel=='FNQ')[0][0]] if 'FNQ' in Nodel else np.zeros(intervals)
-    AS = -1 * MImport[:, np.where(Nodel=='NT')[0][0]] if 'NT' in Nodel else np.zeros(intervals)
-    SW = MImport[:, np.where(Nodel=='WA')[0][0]] if 'WA' in Nodel else np.zeros(intervals)
-    TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]]
+    # Imports into outer internal nodes
+    KTTE = MImport[:, np.where(Nodel=='KT')[0][0]]
 
-    NQ = MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ
-    NV = MImport[:, np.where(Nodel=='VIC')[0][0]] - TV
+    # Imports into inner internal nodes
+    KDPE = MImport[:, np.where(Nodel=='KD')[0][0]] - THKD
+    SBSW = MImport[:, np.where(Nodel=='SB')[0][0]] - PHSB
+    TEPA = MImport[:, np.where(Nodel=='TE')[0][0]] - KTTE
 
-    NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV
-    NS1 = MImport[:, np.where(Nodel=='SA')[0][0]] - AS + SW
-    assert abs(NS - NS1).max()<=0.1, print(abs(NS - NS1).max())
+    JOSW = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - SBSW
+    PASE = -1 * MImport[:, np.where(Nodel=='PA')[0][0]] - TEPA
+    PESE = -1 * MImport[:, np.where(Nodel=='PE')[0][0]] - KDPE
+    
+    MEJO = MImport[:, np.where(Nodel=='JO')[0][0]] - JOSW
+    SEME = -1 * MImport[:, np.where(Nodel=='ME')[0][0]] - MEJO
 
-    TDC = np.array([FQ, NQ, NS, NV, AS, SW, TV]).transpose() # TDC(t, k), MW
+    # Check the final node
+    SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE
+    assert abs(SEME - SEME1).max() <= 0.1, print(abs(SEME - SEME1).max())
+
+    TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
 
     if output:
-        MStorage = np.tile(solution.Storage, (nodes, 1)).transpose() * pcfactor # SPH(t, j), MWh
-        MDischargeD = np.tile(solution.DischargeD, (nodes, 1)).transpose() * pcfactorD  # MDischargeD: DD(j, t)
-        MStorageD = np.tile(solution.StorageD, (nodes, 1)).transpose() * pcfactorD  # SD(t, j), MWh
-        solution.MPV, solution.MWind, solution.MBaseload, solution.MPeak = (MPV, MWind,MBaseload, MPeak)
-        solution.MDischarge, solution.MCharge, solution.MStorage, solution.MP2V = (MDischarge, MCharge, MStorage, MP2V)
-        solution.MDischargeD, solution.MChargeD, solution.MStorageD = (MDischargeD, MChargeD, MStorageD)
+        MStoragePH = np.tile(solution.StoragePH, (nodes, 1)).transpose() * pcfactor # SPH(t, j), MWh
+        MStorageB = np.tile(solution.StoragePH, (nodes, 1)).transpose() * bfactor # SPH(t, j), MWh
+        solution.MPV, solution.MWind, solution.Inter, solution.MBaseload, solution.MPeak, solution.MGas = (MPV, MWind, MInter, MBaseload, MPeak, MGas)
+        solution.MDischargePH, solution.MChargePH, solution.MStoragePH = (MDischargePH, MChargePH, MStoragePH)
+        solution.MDischargeB, solution.MChargeB, solution.MStorageB = (MDischargeB, MChargeB, MStorageB)
         solution.MDeficit, solution.MSpillage = (MDeficit, MSpillage)
 
     return TDC

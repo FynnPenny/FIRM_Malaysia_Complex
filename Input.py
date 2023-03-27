@@ -4,13 +4,13 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import scenario
+from Optimisation import scenario, node, percapita
 
 ###### NODAL LISTS ######
-Nodel = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
+Nodel = np.array(['TH', 'IN', 'PH', 'JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
 PVl =   np.array(['JO']*1 + ['KD']*1 + ['KT']*1 + ['ME']*1 + ['PA']*1 + ['PE']*1 + ['SB']*1 + ['SW']*1 + ['SE']*1, ['TE']*1)
 Windl = np.array(['JO']*1 + ['KD']*1 + ['KT']*1 + ['ME']*1 + ['PA']*1 + ['PE']*1 + ['SB']*1 + ['SW']*1 + ['SE']*1, ['TE']*1)
-Interl = np.array(['KD']*1 + ['SB']*1 + ['SE']*1) if node=='APG' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
+Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1
 
 ###### DATA IMPORTS ######
@@ -29,16 +29,16 @@ constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', e
 
 # Transmission constraints
 externalImports = 0.05 if node=='APG' else 0
-CDC11max, CDC12max, CDC13max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: KDTH, SEIN, SBPH, MW to GW
+CDC11max, CDC12max, CDC13max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 
 ###### TRANSMISSION LOSSES ######
 if scenario=='HVDC':
     # HVDC backbone scenario
-    DCloss = np.array([205, 165, 90, 170, 175, 675, 135, 135, 137, 935]) * 0.03 * pow(10, -3) # [KTPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW]
+    DCloss = np.array([205, 165, 90, 170, 175, 675, 135, 135, 137, 935,200,260,450]) * 0.03 * pow(10, -3) # [KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]
 elif scenario=='HVAC':
     # HVAC backbone scenario
-    DCloss = np.array([i*0.07 for i in [205, 165, 90, 170, 175, 675, 135, 135, 137]] + 0.03*[935]) * 0.03 * pow(10, -3) # [KTPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW]
+    DCloss = np.array([i*0.07 for i in [205, 165, 90, 170, 175, 675, 135, 135, 137]] + [i*0.03 for i in [935,200,260,450]]) * pow(10, -3) # [KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]
 
 ###### STORAGE SYSTEM CONSTANTS ######
 efficiencyPH = 0.8
@@ -70,7 +70,8 @@ gidx = iidx + nodes # Index of hydrogen (service areas)
 
 ###### NETWORK CONSTRAINTS ######
 energy = (MLoad).sum() * pow(10, -9) * resolution / years # PWh p.a.
-contingency = list(0.25 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
+contingency_ph = list(0.25 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
+contingency_b = list(0.1 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 manage = 0 # weeks
 allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiency # MWh
 
