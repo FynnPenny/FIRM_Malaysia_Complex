@@ -20,17 +20,19 @@ TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=ra
 
 assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
-CBaseload = np.array([1.0, 0]) # 24/7, GW #FIX: UPDATE TO RUN-OF-RIVER PERCENTAGE
+constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
+EHydro, EBio = [constraints[:, x] for x in range(assets.shape[1])]
+CBaseload = np.array([0, 0, 0.01, 0, 0.01, 0.01, 1.0, 0.78, 0, 0.26]) * EHydro # 24/7, GW # Run-of-river percentage
 CPeak = CHydro + CBio - CBaseload # GW
 
 ###### CONSTRAINTS ######
 # Energy constraints
-constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
+Hydromax = EHydro
+Biomax = EBio
 
 # Transmission constraints
 externalImports = 0.05 if node=='APG' else 0
 CDC11max, CDC12max, CDC13max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
-
 
 ###### TRANSMISSION LOSSES ######
 if scenario=='HVDC':
@@ -72,11 +74,11 @@ gidx = iidx + nodes # Index of hydrogen (service areas)
 energy = (MLoad).sum() * pow(10, -9) * resolution / years # PWh p.a.
 contingency_ph = list(0.25 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 contingency_b = list(0.1 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
-manage = 0 # weeks
-allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiency # MWh
+#manage = 0 # weeks
+#allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiencyPH # MWh
+allowance = 
 
 GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
-Existing_max = energy * 0.1 * pow(10, 9) # Max contribution from hydro and other renewables: 10% of annual electricity demand in MWh
 Gasmax = energy * 2 * pow(10,9) # MWh
 
 class Solution:
@@ -87,7 +89,9 @@ class Solution:
         self.MLoad = MLoad
         self.intervals, self.nodes = (intervals, nodes)
         self.resolution = resolution
-        #self.baseload = baseload
+        self.existing =
+        self.flexible = 
+        self.baseload = baseload
 
         self.CPV = list(x[: pidx]) # CPV(i), GW
         self.CWind = list(x[pidx: widx]) # CWind(i), GW
