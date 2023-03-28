@@ -14,8 +14,8 @@ parser.add_argument('-p', default=1, type=int, required=False, help='popsize=2, 
 parser.add_argument('-m', default=0.5, type=float, required=False, help='mutation=0.5')
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
-parser.add_argument('-n', default='APG', type=int, required=False, help='APG, MY1, SB, SW...')
-parser.add_argument('-s', default='HVDC', type=int, required=False, help='HVDC, HVAC')
+parser.add_argument('-n', default='APG', type=str, required=False, help='APG, MY1, SB, SW...')
+parser.add_argument('-s', default='HVDC', type=str, required=False, help='HVDC, HVAC')
 args = parser.parse_args()
 
 scenario = args.s
@@ -33,9 +33,9 @@ def F(x):
     S = Solution(x)
 
     CGas = np.nan_to_num(np.array(S.CGas))
-
+    
     # Simulation with only baseload
-    Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, existing=np.ones(intervals) * baseload.sum(), gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
+    Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, existing=baseload, gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
     Max_deficit1 = np.reshape(Deficit1, (-1, 8760)).sum(axis=-1) # MWh per year
     PFlexible_Gas = Deficit_power1.max() * pow(10, -3) # GW
     
@@ -44,13 +44,20 @@ def F(x):
     Max_deficit2 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
     PGas = Deficit_power2.max() * pow(10, -3) # GW
     
-    GHydro = ((CHydro.sum() - CBaseload.sum()) / CPeak.sum()) * ((DischargePH1 / (DischargePH1 + DischargeB1)) * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \ 
-                + (DischargeB1 / (DischargePH1 + DischargeB1)) * (Max_deficit1 - Max_deficit2).max() / efficiencyB) \
-                + CBaseload.sum()
-    GBio = (CBio.sum() / CPeak.sum()) * ((DischargePH1 / (DischargePH1 + DischargeB1)) * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \ 
-                + (DischargeB1 / (DischargePH1 + DischargeB1)) * (Max_deficit1 - Max_deficit2).max() / efficiencyB)
-    GGas = (DischargePH2 / (DischargePH2 + DischargeB2)) * (Max_deficit2).max() / efficiencyPH \ 
-                + (DischargeB2 / (DischargePH2 + DischargeB2)) * (Max_deficit2).max() / efficiencyB
+    PH_proportion1 = DischargePH1.sum() / (DischargePH1.sum() + DischargeB1.sum()) if (DischargePH1.sum() + DischargeB1.sum()) != 0 else 0.5
+    B_proportion1 = DischargeB1.sum() / (DischargePH1.sum() + DischargeB1.sum()) if (DischargePH1.sum() + DischargeB1.sum()) != 0 else 0.5
+    PH_proportion2 = DischargePH2.sum() / (DischargePH2.sum() + DischargeB2.sum()) if (DischargePH2.sum() + DischargeB2.sum()) != 0 else 0.5
+    B_proportion2 = DischargeB2.sum() / (DischargePH2.sum() + DischargeB2.sum()) if (DischargePH2.sum() + DischargeB2.sum()) != 0 else 0.5
+    hydro_flexProportion = (CHydro.sum() - CBaseload.sum()) / CPeak.sum() if CPeak.sum() != 0 else 0
+    bio_flexProportion = CBio.sum() / CPeak.sum() if CPeak.sum() != 0 else 0
+    
+    GHydro = hydro_flexProportion * (PH_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \
+                                     + B_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyB) \
+                                        + CBaseload.sum() ##### CHANGE TO GBASELOAD
+    GBio = bio_flexProportion * (PH_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \
+                                 + B_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyB)
+    GGas = PH_proportion2 * (Max_deficit2).max() / efficiencyPH \
+        + B_proportion2 * (Max_deficit2).max() / efficiencyB
     
     # Power and energy penalty functions
     PenEnergy = max(0, GHydro - Hydromax) + max(0, GBio - Biomax) + max(0, GGas - Gasmax)
@@ -62,9 +69,9 @@ def F(x):
     # Deficit penalty function
     PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)
 
-    # Existing capacity generation profiles
+    # Existing capacity generation profiles    
     gas = np.clip(Deficit2, 0, CGas.sum() * pow(10, 3))
-    hydro = ((CHydro.sum() - CBaseload.sum()) / CPeak.sum()) * np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3)) + np.ones(intervals) * baseload.sum()
+    hydro = ((CHydro.sum() - CBaseload.sum()) / CPeak.sum()) * np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3)) + baseload
     bio = (CBio.sum() / CPeak.sum()) * np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3))
 
     # Simulation using the existing capacity generation profiles
@@ -75,22 +82,25 @@ def F(x):
     GBattery = DischargeB.sum() * resolution / years * pow(10,-6)
 
     # Transmission capacity calculations
-    TDC = Transmission(S) if 'Super' in node else np.zeros((intervals, len(DCloss))) # TDC: TDC(t, k), MW
+    TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(DCloss))) # TDC: TDC(t, k), MW
     CDC = np.amax(abs(TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
 
     # Transmission penalty function
-    PenDC = max(0, CDC[11] - CDC11max) * pow(10, 3) # GW to MW
+    PenDC = max(0, CDC[10] - CDC10max) * pow(10, 3) # GW to MW
+    PenDC += max(0, CDC[11] - CDC11max) * pow(10, 3) # GW to MW
     PenDC += max(0, CDC[12] - CDC12max) * pow(10, 3) # GW to MW
-    PenDC += max(0, CDC[13] - CDC13max) * pow(10, 3) # GW to MW
     PenDC *= pow(10, 3) # GW to MW
 
     # Electricity generated by existing capacity
-    GGas = ((DischargePH2 / (DischargePH2 + DischargeB2)) * Deficit2.sum() / efficiencyPH / years) +  ((DischargeB2 / (DischargePH2 + DischargeB2)) * Deficit2.sum() / efficiencyPH / years)
-    GHydro = ((CHydro.sum() - CBaseload.sum()) / CPeak.sum()) * ((DischargePH1 / (DischargePH1 + DischargeB1)) * (Deficit1.sum() / years / efficiencyPH) + (DischargeB1 / (DischargePH1 + DischargeB1)) * (Deficit1.sum() / years / efficiencyB)) - GGas
-    GBio = ((CBio.sum()) / CPeak.sum()) * ((DischargePH1 / (DischargePH1 + DischargeB1)) * (Deficit1.sum() / years / efficiencyPH) + (DischargeB1 / (DischargePH1 + DischargeB1)) * (Deficit1.sum() / years / efficiencyB)) - GGas - GHydro
+    GGas = (PH_proportion2 * Deficit2.sum() / efficiencyPH / years) \
+        +  (B_proportion2 * Deficit2.sum() / efficiencyPH / years)
+    GHydro = hydro_flexProportion * (PH_proportion1 * (Deficit1.sum() / years / efficiencyPH) \
+         + B_proportion1 * (Deficit1.sum() / years / efficiencyB)) - GGas
+    GBio = bio_flexProportion * (PH_proportion1 * (Deficit1.sum() / years / efficiencyPH) \
+         + B_proportion1 * (Deficit1.sum() / years / efficiencyB)) - GGas - GHydro
 
     # Levelised cost of electricity calculation
-    cost = factor * np.array([sum(S.CPV), sum(S.CWind), sum(S.CInter), sum(S.CPHP), S.CPHS] + list(CDC) + [sum(S.CPV), sum(S.CWind), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, -1, -1]) # $b p.a.
+    cost = factor * np.array([sum(S.CPV), sum(S.CInter), sum(S.CPHP), S.CPHS] + list(CDC) + [sum(S.CPV), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, -1, -1]) # $b p.a.
     cost = cost.sum()
     loss = np.sum(abs(TDC), axis=0) * DCloss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
@@ -108,8 +118,11 @@ if __name__=='__main__':
     starttime = dt.datetime.now()
     print("Optimisation starts at", starttime)
 
-    lb = [0.]       * pzones + [0.]     * wzones + contingency_ph   + contingency_b     + [0.]      + [0.]    * inters + [0.] * nodes
-    ub = [10000.]   * pzones + [300]    * wzones + [10000.] * nodes + [10000.] * nodes  + [100000.] + [1000.] * inters + [50.] * nodes
+#    lb = [0.]       * pzones + [0.]     * wzones + contingency_ph   + contingency_b     + [0.]      + [0.]     + [0.]    * inters + [0.] * nodes
+#    ub = [10000.]   * pzones + [300]    * wzones + [10000.] * nodes + [10000.] * nodes  + [100000.] + [100000] + [1000.] * inters + [50.] * nodes
+
+    lb = [0.]       * pzones + contingency_ph   + contingency_b     + [0.]      + [0.]      + [0.]    * inters + [0.] * nodes
+    ub = [10000.]   * pzones + [10000.] * nodes + [10000.] * nodes  + [100000.] + [100000]  + [1000.] * inters + [50.] * nodes
 
     # start = np.genfromtxt('Results/init.csv', delimiter=',')
 

@@ -9,12 +9,13 @@ def Reliability(solution, existing, gas, start=None, end=None):
     """Deficit = Simulation.Reliability(S, hydro=...)"""
 
     ###### CALCULATE NETLOAD FOR EACH INTERVAL ######
-    Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GWind.sum(axis=1) - solution.GBaseload.sum(axis=1))[start:end] \
-              - existing - gas # Sj-ENLoad(j, t), MW
+    Netload = solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - existing - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
     length = len(Netload)
     
     solution.existing = existing # MW
     solution.gas = gas
+
+    #print(existing)
 
     ###### CREATE STORAGE SYSTEM VARIABLES ######
     Pcapacity_PH = sum(solution.CPHP) * pow(10, 3) # S-CPHP(j), GW to MW
