@@ -9,13 +9,30 @@ def Reliability(solution, existing, gas, start=None, end=None):
     """Deficit = Simulation.Reliability(S, hydro=...)"""
 
     ###### CALCULATE NETLOAD FOR EACH INTERVAL ######
-    Netload = solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - existing - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
+    Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GInter.sum(axis=1))[start:end] \
+        - existing - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
     length = len(Netload)
     
     solution.existing = existing # MW
     solution.gas = gas
 
-    #print(existing)
+    """ print("---- SIMULATION ----")
+    i=19
+    print("x: ", solution.x)
+    print("CPV: ", solution.CPV)
+    print("CPHP: ", solution.CPHP)
+    print("CBP: ", solution.CBP)
+    print("CPHS: ", solution.CPHS)
+    print("CBS: ", solution.CBS)
+    print("CInter: ", solution.CInter)
+    print("CGas: ", solution.CGas)
+    print("---------------------")
+    print("NetLoad: ", Netload[i])
+    print("MLoad: ", solution.MLoad[i].sum())
+    print("GPV: ", solution.GPV[i].sum())
+    print("GInter: ", solution.GInter[i].sum())
+    print("existing: ", solution.existing[i])
+    print("gas: ", solution.gas[i]) """
 
     ###### CREATE STORAGE SYSTEM VARIABLES ######
     Pcapacity_PH = sum(solution.CPHP) * pow(10, 3) # S-CPHP(j), GW to MW
@@ -42,7 +59,7 @@ def Reliability(solution, existing, gas, start=None, end=None):
         ChargePH[t] = Charge_PH_t
         StoragePH[t] = Storage_PH_t
 
-        diff1 = Netloadt - Discharge_PH_t
+        diff1 = Netloadt - Discharge_PH_t + Charge_PH_t
         
         Discharge_B_t = min(max(0, diff1), Pcapacity_B, Storage_B_t1 / resolution)
         Charge_B_t = min(-1 * min(0, diff1), Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution)
@@ -52,7 +69,7 @@ def Reliability(solution, existing, gas, start=None, end=None):
         ChargeB[t] = Charge_B_t
         StorageB[t] = Storage_B_t
 
-        diff2 = Netloadt - Discharge_PH_t - Discharge_B_t
+        diff2 = Netloadt - Discharge_PH_t - Discharge_B_t + Charge_PH_t + Charge_B_t
         
         ###### DETERMINE DEFICITS ######
         if diff2 <= 0:
@@ -73,6 +90,13 @@ def Reliability(solution, existing, gas, start=None, end=None):
 
     Deficit = Deficit_energy + Deficit_power
     Spillage = -1 * np.minimum(Netload + ChargePH + ChargeB, 0)
+
+    """ print("DischargePH: ", DischargePH[i].sum())
+    print("DischargeB: ", DischargeB[i].sum())
+    print("ChargePH: ", ChargePH[i].sum())
+    print("ChargeB: ", ChargeB[i].sum())
+    print("Deficit: ", Deficit[i].sum())
+    print("Spillage: ", Spillage[i].sum()) """
 
     ###### ERROR CHECKING ######
     assert 0 <= int(np.amax(StoragePH)) <= Scapacity_PH, 'Storage below zero or exceeds max storage capacity'

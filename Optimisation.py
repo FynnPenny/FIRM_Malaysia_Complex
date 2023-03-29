@@ -100,7 +100,7 @@ def F(x):
          + B_proportion1 * (Deficit1.sum() / years / efficiencyB)) - GGas - GHydro
 
     # Levelised cost of electricity calculation
-    cost = factor * np.array([sum(S.CPV), sum(S.CInter), sum(S.CPHP), S.CPHS] + list(CDC) + [sum(S.CPV), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, -1, -1]) # $b p.a.
+    cost = factor * np.array([sum(S.CPV), sum(S.CInter), sum(S.CPHP), S.CPHS, sum(S.CBP), S.CBS] + list(CDC) + [sum(S.CPV), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, 0, 0]) # $b p.a.
     cost = cost.sum()
     loss = np.sum(abs(TDC), axis=0) * DCloss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
@@ -130,7 +130,7 @@ if __name__=='__main__':
                                     maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
                                     disp=True, polish=False, updating='deferred', workers=-1)
 
-    with open('Results/Optimisation_resultx.csv', 'w', newline="") as csvfile:
+    with open('Results/Optimisation_resultx{}{}{}.csv'.format(node,scenario,percapita), 'w', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
