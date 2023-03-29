@@ -47,7 +47,8 @@ def Transmission(solution, output=False):
     defactor = MLoad / MLoad.sum(axis=1)[:, None]
     MDeficit = np.tile(solution.Deficit, (nodes, 1)).transpose() * defactor # MDeficit: EDE(j, t)
 
-    MPW = MPV + MInter # + MWind
+    M_minFactors = np.full((intervals, nodes), pow(10,-9)) # Matrix of 10^(-9) required to distribute spillage between nodes when no solar generation
+    MPW = MPV + M_minFactors # + MWind
     spfactor = np.divide(MPW, MPW.sum(axis=1)[:, None], where=MPW.sum(axis=1)[:, None]!=0)
     MSpillage = np.tile(solution.Spillage, (nodes, 1)).transpose() * spfactor # MSpillage: ESP(j, t)
 
