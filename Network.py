@@ -98,40 +98,48 @@ def Transmission(solution, output=False):
     print("spfactor: ", spfactor[i]) """
 
     # Imorts into external nodes
-    THKD = -1 * MImport[:, np.where(Nodel=='TH')[0][0]]
-    PHSB = -1 * MImport[:, np.where(Nodel=='PH')[0][0]]
-    INSE = MImport[:, np.where(Nodel=='IN')[0][0]]
+    coverage = solution.coverage
+    THKD = -1 * MImport[:, np.where(Nodel=='TH')[0][0]] if 'TH' in coverage else np.zeros(intervals)
+    PHSB = -1 * MImport[:, np.where(Nodel=='PH')[0][0]] if 'PH' in coverage else np.zeros(intervals)
+    INSE = MImport[:, np.where(Nodel=='IN')[0][0]] if 'IN' in coverage else np.zeros(intervals)
 
     # Imports into outer internal nodes
-    KTTE = -1 * MImport[:, np.where(Nodel=='KT')[0][0]]
+    KTTE = -1 * MImport[:, np.where(Nodel=='KT')[0][0]] if 'KT' in coverage else np.zeros(intervals)
 
     # Imports into inner internal nodes
-    KDPE = MImport[:, np.where(Nodel=='KD')[0][0]] - THKD
-    SBSW = MImport[:, np.where(Nodel=='SB')[0][0]] - PHSB
-    TEPA = MImport[:, np.where(Nodel=='TE')[0][0]] - KTTE
+    KDPE = MImport[:, np.where(Nodel=='KD')[0][0]] - THKD if 'KD' in coverage else np.zeros(intervals)
+    SBSW = MImport[:, np.where(Nodel=='SB')[0][0]] - PHSB if 'SB' in coverage else np.zeros(intervals)
+    TEPA = MImport[:, np.where(Nodel=='TE')[0][0]] - KTTE if 'TE' in coverage else np.zeros(intervals)
 
-    JOSW = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - SBSW
-    PASE = -1 * MImport[:, np.where(Nodel=='PA')[0][0]] - TEPA
-    PESE = -1 * MImport[:, np.where(Nodel=='PE')[0][0]] - KDPE
+    JOSW = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - SBSW if 'SW' in coverage else np.zeros(intervals)
+    PASE = -1 * MImport[:, np.where(Nodel=='PA')[0][0]] - TEPA if 'PA' in coverage else np.zeros(intervals)
+    PESE = -1 * MImport[:, np.where(Nodel=='PE')[0][0]] - KDPE if 'PE' in coverage else np.zeros(intervals)
     
-    MEJO = MImport[:, np.where(Nodel=='JO')[0][0]] - JOSW
-    SEME = -1 * MImport[:, np.where(Nodel=='ME')[0][0]] - MEJO
+    MEJO = MImport[:, np.where(Nodel=='JO')[0][0]] - JOSW if 'JO' in coverage else np.zeros(intervals)
+    SEME = -1 * MImport[:, np.where(Nodel=='ME')[0][0]] - MEJO if 'ME' in coverage else np.zeros(intervals)
 
     # Check the final node
-    SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE
-    assert abs(SEME - SEME1).max() <= 0.1, print(abs(SEME - SEME1).max())
+    SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE if 'SE' in coverage else np.zeros(intervals)
+    SBSW1 = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - JOSW if 'SW' in coverage else np.zeros(intervals)
+
+    #DEBUG ########################################
+    """ TDC1 = np.array([KDPE, TEPA, SEME, SEME1, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
+    print("SEME Difference: ", abs(SEME - SEME1).max())
+    print("SEME Differencei: ", abs(SEME[i] - SEME1[i]))
+    print("SBSW Difference: ", abs(SBSW - SBSW1).max())
+    print("SBSW Differencei: ", abs(SBSW[i] - SBSW1[i]))
+    print("Imports: ", MImport[i])
+    print("Positive: \n", MLoad[i], "\n", MChargePH[i], "\n", MChargeB[i], "\n", MSpillage[i])
+    print("Negative: \n", MPV[i], "\n", MInter[i], "\n", MBaseload[i], "\n", MPeak[i], "\n", MGas[i], "\n", MDischargePH[i], "\n", MDischargeB[i], "\n", MDeficit[i])
+    np.savetxt("Debug/TDC1.csv", TDC1, delimiter=",") """
+
+    assert abs(SEME - SEME1).max() <= 0.1, print('SEME Error', abs(SEME - SEME1).max())
+    assert abs(SBSW - SBSW1).max() <= 0.1, print('SBSW Error', abs(SBSW - SBSW1).max())
 
     TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
 
-    #DEBUG ########################################
-    TDC1 = np.array([KDPE, TEPA, SEME, SEME1, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
-    """ print("SEME Difference: ", abs(SEME - SEME1).max())
-    print("SEME Difference0: ", abs(SEME[i] - SEME1[i]))
-    print("\nImports: \n", MImport[i], "\n",\
-          "\nPositive: \n", MLoad[i], "\n", MChargePH[i], "\n", MChargeB[i], "\n", MSpillage[i], "\n",\
-          "\nNegative: \n", MPV[i], "\n", MInter[i], "\n", MBaseload[i], "\n", MPeak[i], "\n", MGas[i], "\n", MDischargePH[i], "\n", MDischargeB[i], "\n", MDeficit[i], "\n")
-    np.savetxt("Debug/TDC1.csv", TDC1, delimiter=",")
- """
+    
+
     if output:
         MStoragePH = np.tile(solution.StoragePH, (nodes, 1)).transpose() * pcfactor # SPH(t, j), MWh
         MStorageB = np.tile(solution.StoragePH, (nodes, 1)).transpose() * bfactor # SPH(t, j), MWh

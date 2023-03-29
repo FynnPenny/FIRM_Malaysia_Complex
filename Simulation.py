@@ -8,14 +8,6 @@ import numpy as np
 def Reliability(solution, existing, gas, start=None, end=None):
     """Deficit = Simulation.Reliability(S, hydro=...)"""
 
-    ###### CALCULATE NETLOAD FOR EACH INTERVAL ######
-    Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GInter.sum(axis=1))[start:end] \
-        - existing - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
-    length = len(Netload)
-    
-    solution.existing = existing # MW
-    solution.gas = gas
-
     """ print("---- SIMULATION ----")
     i=19
     print("x: ", solution.x)
@@ -26,7 +18,22 @@ def Reliability(solution, existing, gas, start=None, end=None):
     print("CBS: ", solution.CBS)
     print("CInter: ", solution.CInter)
     print("CGas: ", solution.CGas)
-    print("---------------------")
+    print("MLoad: ", solution.MLoad[i].sum())
+    print("GPV: ", solution.GPV[i].sum())
+    print("GInter: ", solution.GInter[i].sum())
+    print("CBaseload: ", solution.CBaseload)
+    print("Sizes: ", solution.MLoad.shape, solution.GPV.shape, solution.GInter.shape, existing.shape, gas.shape) """
+
+    ###### CALCULATE NETLOAD FOR EACH INTERVAL ######
+    Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GInter.sum(axis=1))[start:end] \
+        - existing - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
+    length = len(Netload)
+    
+    solution.existing = existing # MW
+    solution.gas = gas
+
+    
+    """ print("---------------------")
     print("NetLoad: ", Netload[i])
     print("MLoad: ", solution.MLoad[i].sum())
     print("GPV: ", solution.GPV[i].sum())

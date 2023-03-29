@@ -10,7 +10,7 @@ from Optimisation import scenario, node, percapita
 Nodel = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE', 'TH', 'IN', 'PH'])
 PVl =   np.array(['JO']*1 + ['KD']*1 + ['KT']*1 + ['ME']*1 + ['PA']*1 + ['PE']*1 + ['SB']*1 + ['SW']*1 + ['SE']*1 + ['TE']*1)
 #Windl = np.array(['JO']*1 + ['KD']*1 + ['KT']*1 + ['ME']*1 + ['PA']*1 + ['PE']*1 + ['SB']*1 + ['SW']*1 + ['SE']*1, ['TE']*1)
-Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
+Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1
 
 ###### DATA IMPORTS ######
@@ -33,7 +33,7 @@ Hydromax = EHydro.sum()
 Biomax = EBio.sum()
 
 # Transmission constraints
-externalImports = 0.05 if node=='APG' else 0
+externalImports = 0.05 if node=='APG_Full' else 0
 CDC10max, CDC11max, CDC12max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 ###### TRANSMISSION LOSSES ######
@@ -55,13 +55,47 @@ factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
 firstyear, finalyear, timestep = (2012, 2021, 1)
 
 ###### SCENARIO ADJUSTMENTS #######
-if 'APG' not in node:
+if 'APG_Full' in node:
+    coverage = Nodel
+    """ if 'APG' not in node:
     MLoad = MLoad[:, np.where(Nodel==node)[0]]
-    baseload = baseload[np.where(Nodel==node)[0]]
     TSPV = TSPV[:, np.where(PVl==node)[0]]
     #TSWind = TSWind[:, np.where(Windl==node)[0]]
+    
+    CBaseload = CBaseload[np.where(Nodel==node)[0]]
     CHydro = CHydro[np.where(Nodel==node)[0]]
     CBio = CBio[np.where(Nodel==node)[0]]
+    CPeak = CHydro + CBio - CBaseload # GW
+
+    EHydro, EBio = [x[np.where(Nodel==node)[0]] for x in (EHydro, EBio)]
+
+    baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW """
+
+else:
+    if 'APG_PMY_Only' in node:
+        coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SE', 'TE'])
+    elif 'APG_BMY_Only' in node:
+        coverage = np.array(['SB', 'SW'])
+    elif 'APG_MY_Isolated' in node:
+        coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
+    else:
+        coverage = np.array([node])
+
+    MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
+    TSPV = TSPV[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
+    #TSWind = TSWind[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
+
+    CBaseload = CBaseload[np.where(np.in1d(Nodel, coverage)==True)[0]]
+    CHydro = CHydro[np.where(np.in1d(Nodel, coverage)==True)[0]]
+    CBio = CBio[np.where(np.in1d(Nodel, coverage)==True)[0]]
+    CPeak = CHydro + CBio - CBaseload # GW
+
+    EHydro, EBio = [x[np.where(np.in1d(Nodel, coverage)==True)[0]] for x in (EHydro, EBio)]
+
+    baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
+
+    Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
+#    Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
 
 ###### DECISION VARIABLE LIST INDEXES ######
 intervals, nodes = MLoad.shape
@@ -108,7 +142,7 @@ class Solution:
         self.efficiencyPH = efficiencyPH
         self.efficiencyB = efficiencyB
 
-        self.CInter = list(x[bidx+2: iidx]) if node == 'APG' else [0] #CInter(j), GW
+        self.CInter = list(x[bidx+2: iidx]) if node == 'APG_Full' else len(Interl)*[0] #CInter(j), GW
         self.GInter = np.tile(self.CInter, (intervals, 1)) * pow(10,3) # GInter(j, t), GW to MW
 
         self.CGas = list(x[iidx: ]) # GW
@@ -118,6 +152,7 @@ class Solution:
         self.node = node
         self.scenario = scenario
         self.allowance = allowance
+        self.coverage = coverage
 
         self.CBaseload, self.CPeak = (CBaseload, CPeak)
         self.CHydro = CHydro # GW, GWh

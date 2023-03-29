@@ -14,7 +14,7 @@ parser.add_argument('-p', default=1, type=int, required=False, help='popsize=2, 
 parser.add_argument('-m', default=0.5, type=float, required=False, help='mutation=0.5')
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
-parser.add_argument('-n', default='APG', type=str, required=False, help='APG, MY1, SB, SW...')
+parser.add_argument('-n', default='APG_Full', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
 parser.add_argument('-s', default='HVDC', type=str, required=False, help='HVDC, HVAC')
 args = parser.parse_args()
 
@@ -53,7 +53,7 @@ def F(x):
     
     GHydro = hydro_flexProportion * (PH_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \
                                      + B_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyB) \
-                                        + CBaseload.sum() ##### CHANGE TO GBASELOAD
+                                        + CBaseload.sum() / resolution
     GBio = bio_flexProportion * (PH_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \
                                  + B_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyB)
     GGas = PH_proportion2 * (Max_deficit2).max() / efficiencyPH \
@@ -71,8 +71,8 @@ def F(x):
 
     # Existing capacity generation profiles    
     gas = np.clip(Deficit2, 0, CGas.sum() * pow(10, 3))
-    hydro = ((CHydro.sum() - CBaseload.sum()) / CPeak.sum()) * np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3)) + baseload
-    bio = (CBio.sum() / CPeak.sum()) * np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3))
+    hydro = hydro_flexProportion* np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3)) + baseload
+    bio = bio_flexProportion * np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3))
 
     # Simulation using the existing capacity generation profiles
     Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, existing=hydro + bio, gas=gas)
