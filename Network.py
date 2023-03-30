@@ -17,22 +17,18 @@ def Transmission(solution, output=False):
     for i, j in enumerate(Nodel):
         MPV[i, :] = solution.GPV[:, np.where(PVl==j)[0]].sum(axis=1)
 #        MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
-        if solution.node=='APG':
+        if solution.node=='APG_Full':
             MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)
     MPV, MInter = (MPV.transpose(), MInter.transpose()) # Sij-GPV(t, i), Sij-GWind(t, i), MW
 #    MWind = MWind.transpose()
   
-    baseload = solution.baseload
-    existing = solution.existing
-    flexible = existing - baseload
+    CHydro = solution.CHydro
+    hfactor = np.tile(CHydro,(intervals, 1)) / CHydro.sum()
+    MHydro = np.tile(solution.hydro, (nodes, 1)).transpose() * hfactor
 
-    CBaseload = solution.CBaseload
-    basefactor = np.tile(CBaseload, (intervals, 1)) / CBaseload.sum()
-    MBaseload = np.tile(baseload, (nodes, 1)).transpose() * basefactor
-    
-    CPeak = solution.CPeak # GW
-    pkfactor = np.tile(CPeak, (intervals, 1)) / CPeak.sum()
-    MPeak = np.tile(flexible, (nodes, 1)).transpose() * pkfactor # MW
+    CBio = solution.CBio
+    bfactor = np.tile(CBio,(intervals, 1)) / CBio.sum()
+    MBio = np.tile(solution.bio, (nodes, 1)).transpose() * bfactor
 
     CGas = np.nan_to_num(np.array(solution.CGas)) # GW
     gas = solution.gas # MW
@@ -63,7 +59,7 @@ def Transmission(solution, output=False):
     MChargeB = np.tile(solution.ChargeB, (nodes, 1)).transpose() * bfactor # MCharge: CHPH(j, t)
 
     MImport = MLoad + MChargePH + MChargeB + MSpillage \
-              - MPV - MInter - MBaseload - MPeak - MGas - MDischargePH - MDischargeB - MDeficit # - MWind; EIM(t, j), MW
+              - MPV - MInter - MHydro - MBio - MGas - MDischargePH - MDischargeB - MDeficit # - MWind; EIM(t, j), MW
     
     """ i = 19
     print("---- TRANSMISSION ----")
@@ -123,7 +119,7 @@ def Transmission(solution, output=False):
     SBSW1 = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - JOSW if 'SW' in coverage else np.zeros(intervals)
 
     #DEBUG ########################################
-    """ TDC1 = np.array([KDPE, TEPA, SEME, SEME1, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
+    """ TDC1 = np.array([KDPE, TEPA, SEME, SEME1, MEJO, PESE, SBSW, SBSW1, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
     print("SEME Difference: ", abs(SEME - SEME1).max())
     print("SEME Differencei: ", abs(SEME[i] - SEME1[i]))
     print("SBSW Difference: ", abs(SBSW - SBSW1).max())
@@ -136,14 +132,12 @@ def Transmission(solution, output=False):
     assert abs(SEME - SEME1).max() <= 0.1, print('SEME Error', abs(SEME - SEME1).max())
     assert abs(SBSW - SBSW1).max() <= 0.1, print('SBSW Error', abs(SBSW - SBSW1).max())
 
-    TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
-
-    
+    TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW   
 
     if output:
         MStoragePH = np.tile(solution.StoragePH, (nodes, 1)).transpose() * pcfactor # SPH(t, j), MWh
         MStorageB = np.tile(solution.StoragePH, (nodes, 1)).transpose() * bfactor # SPH(t, j), MWh
-        solution.MPV, solution.Inter, solution.MBaseload, solution.MPeak, solution.MGas = (MPV, MInter, MBaseload, MPeak, MGas)
+        solution.MPV, solution.MInter, solution.MHydro, solution.MBio, solution.MGas = (MPV, MInter, MHydro, MBio, MGas)
 #        solution.MWind = MWind        
         solution.MDischargePH, solution.MChargePH, solution.MStoragePH = (MDischargePH, MChargePH, MStoragePH)
         solution.MDischargeB, solution.MChargeB, solution.MStorageB = (MDischargeB, MChargeB, MStorageB)

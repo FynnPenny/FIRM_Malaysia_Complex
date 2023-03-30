@@ -6,10 +6,12 @@
 import numpy as np
 from Optimisation import scenario, node, percapita
 
+node = 'APG_PMY_Only'
+
 ###### NODAL LISTS ######
-Nodel = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE', 'TH', 'IN', 'PH'])
-PVl =   np.array(['JO']*1 + ['KD']*1 + ['KT']*1 + ['ME']*1 + ['PA']*1 + ['PE']*1 + ['SB']*1 + ['SW']*1 + ['SE']*1 + ['TE']*1)
-#Windl = np.array(['JO']*1 + ['KD']*1 + ['KT']*1 + ['ME']*1 + ['PA']*1 + ['PE']*1 + ['SB']*1 + ['SW']*1 + ['SE']*1, ['TE']*1)
+Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
+PVl =   np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
+#Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
 Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1
 
@@ -21,28 +23,28 @@ TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(
 assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
 constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
-EHydro, EBio = [constraints[:, x] for x in range(assets.shape[1])]
-CBaseload = np.array([0, 0, 0.01, 0, 0.01, 0.01, 1.0, 0.78, 0, 0.26, 0, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+EHydro, EBio = [constraints[:, x] for x in range(assets.shape[1])] # GWh per year
+CBaseload = np.array([0, 1, 0.26, 0.01, 0, 0.01, 0, 0.01, 0, 0.78, 0, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
 CPeak = CHydro + CBio - CBaseload # GW
 
 baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
 
 ###### CONSTRAINTS ######
 # Energy constraints
-Hydromax = EHydro.sum()
-Biomax = EBio.sum()
+Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
+Biomax = EBio.sum() * pow(10,3) # GWh to MWh per year
 
 # Transmission constraints
 externalImports = 0.05 if node=='APG_Full' else 0
-CDC10max, CDC11max, CDC12max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
+CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 ###### TRANSMISSION LOSSES ######
 if scenario=='HVDC':
     # HVDC backbone scenario
-    DCloss = np.array([205, 165, 90, 170, 175, 675, 135, 135, 137, 935,200,260,450]) * 0.03 * pow(10, -3) # [KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]
+    DCloss = np.array([135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450]) * 0.03 * pow(10, -3) # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
 elif scenario=='HVAC':
     # HVAC backbone scenario
-    DCloss = np.array([i*0.07 for i in [205, 165, 90, 170, 175, 675, 135, 135, 137]] + [i*0.03 for i in [935,200,260,450]]) * pow(10, -3) # [KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, KDPE, JOSW, THKD, INSE, PHSB]
+    DCloss = np.array([i*0.07 for i in [135, 165, 90, 170, 175, 675, 135, 135]] + [i*0.03 for i in [935,200,260,450]]) * pow(10, -3) # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
 
 ###### STORAGE SYSTEM CONSTANTS ######
 efficiencyPH = 0.8
@@ -57,19 +59,6 @@ firstyear, finalyear, timestep = (2012, 2021, 1)
 ###### SCENARIO ADJUSTMENTS #######
 if 'APG_Full' in node:
     coverage = Nodel
-    """ if 'APG' not in node:
-    MLoad = MLoad[:, np.where(Nodel==node)[0]]
-    TSPV = TSPV[:, np.where(PVl==node)[0]]
-    #TSWind = TSWind[:, np.where(Windl==node)[0]]
-    
-    CBaseload = CBaseload[np.where(Nodel==node)[0]]
-    CHydro = CHydro[np.where(Nodel==node)[0]]
-    CBio = CBio[np.where(Nodel==node)[0]]
-    CPeak = CHydro + CBio - CBaseload # GW
-
-    EHydro, EBio = [x[np.where(Nodel==node)[0]] for x in (EHydro, EBio)]
-
-    baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW """
 
 else:
     if 'APG_PMY_Only' in node:
@@ -91,6 +80,9 @@ else:
     CPeak = CHydro + CBio - CBaseload # GW
 
     EHydro, EBio = [x[np.where(np.in1d(Nodel, coverage)==True)[0]] for x in (EHydro, EBio)]
+
+    Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
+    Biomax = EBio.sum() * pow(10,3) # GWh to MWh per year
 
     baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
 
@@ -155,8 +147,8 @@ class Solution:
         self.coverage = coverage
 
         self.CBaseload, self.CPeak = (CBaseload, CPeak)
-        self.CHydro = CHydro # GW, GWh
-        self.CBio = CBio # GW, GWh
+        self.CHydro = CHydro # GW
+        self.CBio = CBio # GW
 
     def __repr__(self):
         """S = Solution(list(np.ones(64))) >> print(S)"""
