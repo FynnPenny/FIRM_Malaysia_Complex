@@ -76,17 +76,17 @@ def LPGM(solution):
     datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%a %-d %b %Y %H:%M') for x in range(intervals)])
     C = np.insert(C.astype('str'), 0, datentime, axis=1)
 
-    header = 'Date & time,Operational demand,Hydrogen (GW),' \
-             'Hydropower (GW),External IC Imports (GW), Biomass (GW),Solar photovoltaics (GW),PHES-Discharge (GW),Battery-Discharge (GW),Energy deficit (GW),Energy spillage (GW),PHES-Charge (GW),Battery-Charge (GW),' \
-             'PHES-Storage (GWh),Battery-Storage (GWh)' \
+    header = 'Date & time,Operational demand,Hydrogen (MW),' \
+             'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),PHES-Charge (MW),Battery-Charge (MW),' \
+             'PHES-Storage (MWh),Battery-Storage (MWh),' \
              'KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB'
 
     np.savetxt('Results/LPGM_{}_{}_{}_Network.csv'.format(node,scenario,percapita), C, fmt='%s', delimiter=',', header=header, comments='')
 
     if 'APG' in node:
-        header = 'Date & time,Operational demand,Hydrogen (GW),' \
-                 'Hydropower (GW),External IC Imports (GW), Biomass (GW),Solar photovoltaics (GW),PHES-Discharge (GW),Battery-Discharge (GW),Energy deficit (GW),Energy spillage (GW),'\
-                 'Transmission,PHES-Charge (GW),Battery-Charge (GW),' \
+        header = 'Date & time,Operational demand,Hydrogen (MW),' \
+                 'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
+                 'Transmission,PHES-Charge (MW),Battery-Charge (MW),' \
                  'PHES-Storage,Battery-Storage'
 
         Topology = solution.Topology[np.where(np.in1d(Nodel, coverage) == True)[0]]
@@ -109,20 +109,22 @@ def LPGM(solution):
 def GGTA(solution):
     """GW, GWh, TWh p.a. and A$/MWh information"""
     # Import cost factors
-    factor = np.genfromtxt('Data/factor.csv', dtype=None, delimiter=',', encoding=None)
+    if scenario == 'HVDC':
+        factor = np.genfromtxt('Data/factor.csv', dtype=None, delimiter=',', encoding=None)
+    elif scenario == 'HVAC':
+        factor = np.genfromtxt('Data/factor_hvac.csv', dtype=None, delimiter=',', encoding=None)
+        
     factor = dict(factor)
 
     # Import capacities [GW, GWh] from the least-cost solution
     CPV, CInter, CPHP, CBP, CPHS, CBS = (sum(solution.CPV), sum(solution.CInter), sum(solution.CPHP), sum(solution.CBP), solution.CPHS, solution.CBS) # GW, GWh
 #    CWind = sum(solution.CWind)
     CapHydro, CapBio, CapGas = CHydro.sum(), CBio.sum(), np.nan_to_num(np.array(solution.CGas)).sum() # GW
-    CapFlex = CapHydro + CapBio
 
     # Import generation energy [GWh] from the least-cost solution
     GPV, GHydro, GGas, GInter, GBio = map(lambda x: x * pow(10, -6) * resolution / years, (solution.GPV.sum(), solution.MHydro.sum(), solution.MGas.sum(), solution.MInter.sum(), solution.MBio.sum())) # TWh p.a.
     DischargePH, DischargeB = (solution.DischargePH.sum(), solution.DischargeB.sum())
 #    GWind = solution.GWind.sum()
-    GFlex = GHydro + GBio
     CFPV = GPV / CPV / 8.76
 #    CFWind = GWind / CWind / 8.76
     
@@ -133,21 +135,30 @@ def GGTA(solution):
     CostBio = factor['Bio'] * GBio # A$b p.a.
     CostGas = factor['GasCap'] * CapGas + factor['GasFuel'] * GGas # A$b p.a.
     CostPH = factor['PHP'] * CPHP + factor['PHS'] * CPHS + factor['PHES-VOM'] * DischargePH * resolution / years * pow(10,-6) # A$b p.a.
-    CostInter = factor['Inter'] * CInter # A$b p.a.
+    CostInter = factor['Inter'] * GInter # A$b p.a.
     CostBattery = factor['BP'] * CBP + factor['BS'] * CBS + factor['B-VOM'] * DischargeB * resolution / years * pow(10,-6) # A$b p.a.
 #    if scenario>=21:
 #        CostPH -= factor['LegPH']
 
-    CostDC = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
-    CostDC = (CostDC * solution.CDC).sum() # A$b p.a.
+    CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
+    CostDC, CostAC, CDC, CAC = [],[],[],[]
+
+    for i in range(0,len(CostT)):
+        CostDC.append(CostT[i]) if dc_flags[i] else CostAC.append(CostT[i])
+        CDC.append(solution.CDC[i]) if dc_flags[i] else CAC.append(solution.CDC[i])
+    CostDC, CostAC, CDC, CAC = [np.array(x) for x in [CostDC, CostAC, CDC, CAC]]
+    
+    CostDC = (CostDC * CDC).sum() if len(CDC) > 0 else 0 # A$b p.a.
+    CostAC = (CostAC * CAC).sum() if len(CAC) > 0 else 0 # A$b p.a.
+
 #    if scenario>=21:
 #        CostDC -= factor['LegINTC']
 
-    CostAC = factor['ACPV'] * CPV # + factor['ACWind'] * CWind # A$b p.a. ########### ADJUST COST FACTORS FOR AC NETWORK ##############################
+    CostAC += factor['ACPV'] * CPV # + factor['ACWind'] * CWind # A$b p.a.
     
     # Calculate the average annual energy demand
     Energy = (MLoad).sum() * pow(10, -9) * resolution / years # PWh p.a.
-    Loss = np.sum(abs(solution.TDC), axis=0) * DCloss
+    Loss = np.sum(abs(solution.TDC), axis=0) * TLoss
     Loss = Loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
 
     # Calculate the levelised cost of elcetricity at a network level
@@ -225,7 +236,7 @@ def Information(x, hydro , bio, gas):
     assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, "Bio generation exceeds requirement"
     assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, "Gas generation exceeds requirement"
 
-    S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(DCloss))) # TDC(t, k), MW
+    S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
     S.CDC = np.amax(abs(S.TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
     S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
 
@@ -275,8 +286,9 @@ def Information(x, hydro , bio, gas):
     return True
 
 if __name__ == '__main__':
-    Optimisation_x = np.genfromtxt('Results/Optimisation_resultx.csv', delimiter=',')
-    hydro = np.genfromtxt('Results/Dispatch_Hydro.csv', delimiter=',', skip_header=1)
-    bio = np.genfromtxt('Results/Dispatch_Bio.csv', delimiter=',', skip_header=1)
-    gas = np.genfromtxt('Results/Dispatch_Gas.csv', delimiter=',', skip_header=1)
+    suffix = "_APG_PMY_Only_HVDC_5.csv"
+    Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
+    hydro = np.genfromtxt('Results/Dispatch_Hydro{}'.format(suffix), delimiter=',', skip_header=1)
+    bio = np.genfromtxt('Results/Dispatch_Bio{}'.format(suffix), delimiter=',', skip_header=1)
+    gas = np.genfromtxt('Results/Dispatch_Gas{}'.format(suffix), delimiter=',', skip_header=1)
     Information(Optimisation_x, hydro, bio, gas)

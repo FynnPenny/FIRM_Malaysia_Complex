@@ -6,8 +6,6 @@
 import numpy as np
 from Optimisation import scenario, node, percapita
 
-node = 'APG_PMY_Only'
-
 ###### NODAL LISTS ######
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
 PVl =   np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
@@ -41,10 +39,17 @@ CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0
 ###### TRANSMISSION LOSSES ######
 if scenario=='HVDC':
     # HVDC backbone scenario
-    DCloss = np.array([135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450]) * 0.03 * pow(10, -3) # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
+    dc_flags = np.array([True,True,True,True,True,True,True,True,True,True,True,True])
+    
 elif scenario=='HVAC':
     # HVAC backbone scenario
-    DCloss = np.array([i*0.07 for i in [135, 165, 90, 170, 175, 675, 135, 135]] + [i*0.03 for i in [935,200,260,450]]) * pow(10, -3) # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
+    dc_flags = np.array([False,False,False,False,False,False,False,False,True,True,True,True])
+    
+TLoss = []
+TDistances = [135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450] # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
+for i in range(0,len(dc_flags)):
+    TLoss.append(TDistances[i]*0.03) if dc_flags[i] else TLoss.append(TDistances[i]*0.07)
+TLoss = np.array(TLoss)* pow(10, -3)
 
 ###### STORAGE SYSTEM CONSTANTS ######
 efficiencyPH = 0.8
@@ -57,15 +62,16 @@ factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
 firstyear, finalyear, timestep = (2012, 2021, 1)
 
 ###### SCENARIO ADJUSTMENTS #######
-if 'APG_Full' in node:
+# Node values
+if 'APG_Full' == node:
     coverage = Nodel
 
 else:
-    if 'APG_PMY_Only' in node:
+    if 'APG_PMY_Only' == node:
         coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SE', 'TE'])
-    elif 'APG_BMY_Only' in node:
+    elif 'APG_BMY_Only' == node:
         coverage = np.array(['SB', 'SW'])
-    elif 'APG_MY_Isolated' in node:
+    elif 'APG_MY_Isolated' == node:
         coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
     else:
         coverage = np.array([node])
@@ -88,6 +94,10 @@ else:
 
     Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
 #    Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
+
+# Scenario values
+if scenario == 'HVAC':
+    factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
 
 ###### DECISION VARIABLE LIST INDEXES ######
 intervals, nodes = MLoad.shape
