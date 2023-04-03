@@ -155,6 +155,7 @@ class Solution:
         self.scenario = scenario
         self.allowance = allowance
         self.coverage = coverage
+        self.TLoss = TLoss
 
         self.CBaseload, self.CPeak = (CBaseload, CPeak)
         self.CHydro = CHydro # GW

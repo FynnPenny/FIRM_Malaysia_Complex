@@ -15,11 +15,11 @@ def fill_deficit(deficit,hydro,bio,gas,hydro_limit,bio_limit,gas_limit,hydro_ann
         d = deficit[i]
         t = i
         count = 0
-        print("--------------------")
-        print(idd, " of ", len(idx))
+        #print("--------------------")
+        #print(idd, " of ", len(idx))
         try:
             while d > 0 and t >= 0 and count < step:
-                print("t = ",t)
+                #print("t = ",t)
                 year = t // 8760
                 start = year * 8760
                 end = (year+1) * 8760
@@ -29,7 +29,7 @@ def fill_deficit(deficit,hydro,bio,gas,hydro_limit,bio_limit,gas_limit,hydro_ann
                 if hflag:
                     remaining = hydro_annual - sum(hydro[start:end])
                     assert remaining >= 0
-                    hydro_c = min(hydro[t] + d, hydro_limit, hydro[t] + allowance)
+                    hydro_c = min(hydro[t] + d, hydro_limit, hydro[t] + remaining)
                     d = d - (hydro_c - hydro[t])
                     hydro[t] = hydro_c
                     if remaining == 0:
@@ -42,7 +42,7 @@ def fill_deficit(deficit,hydro,bio,gas,hydro_limit,bio_limit,gas_limit,hydro_ann
                     if d > 0:
                         remaining = bio_annual - sum(bio[start:end])
                         assert remaining >= 0
-                        bio_c = min(bio[t] + d, bio_limit, bio[t] + allowance)
+                        bio_c = min(bio[t] + d, bio_limit, bio[t] + remaining)
                         d = d - (bio_c - bio[t])
                         bio[t] = bio_c
                         if remaining == 0:
@@ -54,7 +54,7 @@ def fill_deficit(deficit,hydro,bio,gas,hydro_limit,bio_limit,gas_limit,hydro_ann
                     if d > 0:
                         remaining = gas_annual - sum(gas[start:end])
                         assert remaining >= 0
-                        gas_c = min(gas[t] + d, gas_limit, gas[t] + allowance)
+                        gas_c = min(gas[t] + d, gas_limit, gas[t] + remaining)
                         d = d - (gas_c - gas[t])
                         gas[t] = gas_c
                         if remaining == 0:
@@ -93,7 +93,7 @@ def Analysis(optimisation_x,suffix):
     PBio_Gas = Deficit_power2.max() * pow(10, -3) # GW
 
     Deficit_energy3, Deficit_power3, Deficit3, DischargePH3, DischargeB3 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10, 3), bio=np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
-    Max_deficit3 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
+    Max_deficit3 = np.reshape(Deficit3, (-1, 8760)).sum(axis=-1) # MWh per year
     PGas = Deficit_power3.max() * pow(10, -3) # GW
     
     GHydro = (Max_deficit1 - Max_deficit2).max() / 0.8
@@ -141,6 +141,7 @@ def Analysis(optimisation_x,suffix):
         Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=hydro, bio=bio, gas=gas)
         h,b,g = fill_deficit(Deficit,hydro,bio,gas,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,False,True,False,0.8,168)
         Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
+        np.savetxt("Debug/Deficit.csv",Deficit)
         print("Bio generation:", maxx(b))
         print("Remaining deficit:", Deficit.sum()/1e6)
         step = 1
@@ -226,5 +227,6 @@ def Analysis(optimisation_x,suffix):
     return True
 
 if __name__=='__main__':
-    optimisation_x = np.genfromtxt('Results/Optimisation_resultx.csv'.format(node,scenario,percapita), delimiter=',')
+    suffix = '_PA_HVDC_5.csv'
+    optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix).format(node,scenario,percapita), delimiter=',')
     Analysis(optimisation_x,'.csv')

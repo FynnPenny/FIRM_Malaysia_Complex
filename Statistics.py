@@ -30,7 +30,7 @@ def Debug(solution):
 #        assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
 #                   - PV[i] - Inter[i] - Wind[i] - Baseload[i] - Peak[i] - DischargePH[i] + DischargeB[i] - Deficit[i]) <= 1
         assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-                   - PV[i] - Inter[i] - Hydro[i] - Bio[i] - DischargePH[i] + DischargeB[i] - Deficit[i] - Gas[i]) <= 1
+                   - PV[i] - Inter[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
 
         # Discharge, Charge and Storage
         if i==0:
@@ -119,7 +119,8 @@ def GGTA(solution):
     # Import capacities [GW, GWh] from the least-cost solution
     CPV, CInter, CPHP, CBP, CPHS, CBS = (sum(solution.CPV), sum(solution.CInter), sum(solution.CPHP), sum(solution.CBP), solution.CPHS, solution.CBS) # GW, GWh
 #    CWind = sum(solution.CWind)
-    CapHydro, CapBio, CapGas = CHydro.sum(), CBio.sum(), np.nan_to_num(np.array(solution.CGas)).sum() # GW
+    CapHydro, CapBio = CHydro.sum(), CBio.sum() # GW
+    CapGas = (solution.MGas.sum(axis=1)).max() # GW
 
     # Import generation energy [GWh] from the least-cost solution
     GPV, GHydro, GGas, GInter, GBio = map(lambda x: x * pow(10, -6) * resolution / years, (solution.GPV.sum(), solution.MHydro.sum(), solution.MGas.sum(), solution.MInter.sum(), solution.MBio.sum())) # TWh p.a.
@@ -236,7 +237,8 @@ def Information(x, hydro , bio, gas):
     assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, "Bio generation exceeds requirement"
     assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, "Gas generation exceeds requirement"
 
-    S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
+    #S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
+    S.TDC = Transmission(S, output=True)
     S.CDC = np.amax(abs(S.TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
     S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
 
@@ -286,7 +288,7 @@ def Information(x, hydro , bio, gas):
     return True
 
 if __name__ == '__main__':
-    suffix = "_APG_PMY_Only_HVDC_5.csv"
+    suffix = "_SE_HVDC_5.csv"
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
     hydro = np.genfromtxt('Results/Dispatch_Hydro{}'.format(suffix), delimiter=',', skip_header=1)
     bio = np.genfromtxt('Results/Dispatch_Bio{}'.format(suffix), delimiter=',', skip_header=1)
