@@ -8,22 +8,6 @@ import numpy as np
 def Reliability(solution, hydro, bio, gas, start=None, end=None):
     """Deficit = Simulation.Reliability(S, hydro=...)"""
 
-    """ print("---- SIMULATION ----")
-    i=19
-    print("x: ", solution.x)
-    print("CPV: ", solution.CPV)
-    print("CPHP: ", solution.CPHP)
-    print("CBP: ", solution.CBP)
-    print("CPHS: ", solution.CPHS)
-    print("CBS: ", solution.CBS)
-    print("CInter: ", solution.CInter)
-    print("CGas: ", solution.CGas)
-    print("MLoad: ", solution.MLoad[i].sum())
-    print("GPV: ", solution.GPV[i].sum())
-    print("GInter: ", solution.GInter[i].sum())
-    print("CBaseload: ", solution.CBaseload)
-    print("Sizes: ", solution.MLoad.shape, solution.GPV.shape, solution.GInter.shape, existing.shape, gas.shape) """
-
     ###### CALCULATE NETLOAD FOR EACH INTERVAL ######
     Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GInter.sum(axis=1))[start:end] \
         - hydro - bio - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
@@ -32,15 +16,6 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
     solution.hydro = hydro # MW
     solution.bio = bio
     solution.gas = gas
-
-    
-    """ print("---------------------")
-    print("NetLoad: ", Netload[i])
-    print("MLoad: ", solution.MLoad[i].sum())
-    print("GPV: ", solution.GPV[i].sum())
-    print("GInter: ", solution.GInter[i].sum())
-    print("existing: ", solution.existing[i])
-    print("gas: ", solution.gas[i]) """
 
     ###### CREATE STORAGE SYSTEM VARIABLES ######
     Pcapacity_PH = sum(solution.CPHP) * pow(10, 3) # S-CPHP(j), GW to MW
@@ -97,14 +72,7 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
             Deficit_power[t] = diff2 # B power deficit        
 
     Deficit = Deficit_energy + Deficit_power
-    Spillage = -1 * np.minimum(Netload + ChargePH + ChargeB, 0)
-
-    """ print("DischargePH: ", DischargePH[i].sum())
-    print("DischargeB: ", DischargeB[i].sum())
-    print("ChargePH: ", ChargePH[i].sum())
-    print("ChargeB: ", ChargeB[i].sum())
-    print("Deficit: ", Deficit[i].sum())
-    print("Spillage: ", Spillage[i].sum()) """
+    Spillage = -1 * np.minimum(Netload + ChargePH + ChargeB - DischargePH - DischargeB, 0)
 
     ###### ERROR CHECKING ######
     assert 0 <= int(np.amax(StoragePH)) <= Scapacity_PH, 'Storage below zero or exceeds max storage capacity'

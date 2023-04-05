@@ -61,38 +61,6 @@ def Transmission(solution, output=False):
     MImport = MLoad + MChargePH + MChargeB + MSpillage \
               - MPV - MInter - MHydro - MBio - MGas - MDischargePH - MDischargeB - MDeficit # - MWind; EIM(t, j), MW
     
-    """ i = 19
-    print("---- TRANSMISSION ----")
-    print("x: ", solution.x)
-    print("CPV: ", solution.CPV)
-    print("CPHP: ", solution.CPHP)
-    print("CBP: ", solution.CBP)
-    print("CPHS: ", solution.CPHS)
-    print("CBS: ", solution.CBS)
-    print("CInter: ", solution.CInter)
-    print("CGas: ", solution.CGas)
-    print("---------------------")
-    print("MImport: ", MImport[i].sum())
-    print("MLoad", MLoad[i].sum())
-    print("MChargePH", MChargePH[i].sum())
-    print("MChargeB", MChargeB[i].sum())
-    print("MSpillage", MSpillage[i].sum())
-    print("MPV", MPV[i].sum())
-    print("MInter", MInter[i].sum())
-    print("MBaseload", MBaseload[i].sum())
-    print("MPeak", MPeak[i].sum())
-    print("MGas", MGas[i].sum())
-    print("MDischargePH", MDischargePH[i].sum())
-    print("MDischargeB", MDischargeB[i].sum())
-    print("MDeficit", MDeficit[i].sum())
-    print("---------------------")
-    print("existing: ", MPeak[i].sum() + MBaseload[i].sum())
-    print("gas: ", MGas[i].sum())
-    print("NetLoad", MLoad[i].sum() - MPeak[i].sum() - MBaseload[i].sum() - MGas[i].sum() - MPV[i].sum() - MInter[i].sum())
-    print("Positive Balancing: ", MChargePH[i].sum() + MChargeB[i].sum() + MSpillage[i].sum())
-    print("Negative Balancing: ", MDischargePH[i].sum() + MDischargeB[i].sum() + MDeficit[i].sum())
-    print("spfactor: ", spfactor[i]) """
-
     coverage = solution.coverage
     if len(coverage) > 1:
         # Imorts into external nodes
@@ -118,17 +86,6 @@ def Transmission(solution, output=False):
         # Check the final node
         SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE if 'SE' in coverage else np.zeros(intervals)
         SBSW1 = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - JOSW if 'SW' in coverage else np.zeros(intervals)
-
-        #DEBUG ########################################
-        """ TDC1 = np.array([KDPE, TEPA, SEME, SEME1, MEJO, PESE, SBSW, SBSW1, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW
-        print("SEME Difference: ", abs(SEME - SEME1).max())
-        print("SEME Differencei: ", abs(SEME[i] - SEME1[i]))
-        print("SBSW Difference: ", abs(SBSW - SBSW1).max())
-        print("SBSW Differencei: ", abs(SBSW[i] - SBSW1[i]))
-        print("Imports: ", MImport[i])
-        print("Positive: \n", MLoad[i], "\n", MChargePH[i], "\n", MChargeB[i], "\n", MSpillage[i])
-        print("Negative: \n", MPV[i], "\n", MInter[i], "\n", MBaseload[i], "\n", MPeak[i], "\n", MGas[i], "\n", MDischargePH[i], "\n", MDischargeB[i], "\n", MDeficit[i])
-        np.savetxt("Debug/TDC1.csv", TDC1, delimiter=",") """
 
         assert abs(SEME - SEME1).max() <= 0.1, print('SEME Error', abs(SEME - SEME1).max())
         assert abs(SBSW - SBSW1).max() <= 0.1, print('SBSW Error', abs(SBSW - SBSW1).max())
