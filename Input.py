@@ -8,7 +8,7 @@ from Optimisation import scenario, node, percapita
 
 ###### NODAL LISTS ######
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
-PVl =   np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
+PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
 #Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
 Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1

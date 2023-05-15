@@ -9,13 +9,13 @@ import datetime as dt
 import csv
 
 parser = ArgumentParser()
-parser.add_argument('-i', default=400, type=int, required=False, help='maxiter=4000, 400')
-parser.add_argument('-p', default=2, type=int, required=False, help='popsize=2, 10')
+parser.add_argument('-i', default=1000, type=int, required=False, help='maxiter=4000, 400')
+parser.add_argument('-p', default=5, type=int, required=False, help='popsize=2, 10')
 parser.add_argument('-m', default=0.5, type=float, required=False, help='mutation=0.5')
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
-parser.add_argument('-n', default='PA', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
-parser.add_argument('-s', default='HVDC', type=str, required=False, help='HVDC, HVAC')
+parser.add_argument('-n', default='APG_Full', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
+parser.add_argument('-s', default='HVAC', type=str, required=False, help='HVDC, HVAC')
 args = parser.parse_args()
 
 scenario = args.s
@@ -38,26 +38,21 @@ def F(x):
     Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, hydro=baseload, bio=np.zeros(intervals), gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
     Max_deficit1 = np.reshape(Deficit1, (-1, 8760)).sum(axis=-1) # MWh per year
     PFlexible_Gas = Deficit_power1.max() * pow(10, -3) # GW
-    
-    # Simulation with baseload and all existing capacity
-    Deficit_energy2, Deficit_power2, Deficit2, DischargePH2, DischargeB2 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
+
+    # Simulation with only baseload and hydro (cheapest)
+    Deficit_energy2, Deficit_power2, Deficit2, DischargePH2, DischargeB2 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio=np.zeros(intervals), gas=np.zeros(intervals))
     Max_deficit2 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
-    PGas = Deficit_power2.max() * pow(10, -3) # GW
+    PBio_Gas = Deficit_power2.max() * pow(10, -3) # GW
+
+    # Simulation with only baseload, hydro and bio (next cheapest)
+    Deficit_energy3, Deficit_power3, Deficit3, DischargePH3, DischargeB3 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
+    Max_deficit3 = np.reshape(Deficit3, (-1, 8760)).sum(axis=-1) # MWh per year
+    PGas = Deficit_power3.max() * pow(10, -3) # GW
     
-    PH_proportion1 = DischargePH1.sum() / (DischargePH1.sum() + DischargeB1.sum()) if (DischargePH1.sum() + DischargeB1.sum()) != 0 else 0.5
-    B_proportion1 = DischargeB1.sum() / (DischargePH1.sum() + DischargeB1.sum()) if (DischargePH1.sum() + DischargeB1.sum()) != 0 else 0.5
-    PH_proportion2 = DischargePH2.sum() / (DischargePH2.sum() + DischargeB2.sum()) if (DischargePH2.sum() + DischargeB2.sum()) != 0 else 0.5
-    B_proportion2 = DischargeB2.sum() / (DischargePH2.sum() + DischargeB2.sum()) if (DischargePH2.sum() + DischargeB2.sum()) != 0 else 0.5
-    hydro_flexProportion = (CHydro.sum() - CBaseload.sum()) / CPeak.sum() if CPeak.sum() != 0 else 0
-    bio_flexProportion = CBio.sum() / CPeak.sum() if CPeak.sum() != 0 else 0
-    
-    GHydro = resolution * hydro_flexProportion * (PH_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \
-                                     + B_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyB) \
-                                        + CBaseload.sum() * pow(10,3)
-    GBio = resolution * bio_flexProportion * (PH_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyPH \
-                                 + B_proportion1 * (Max_deficit1 - Max_deficit2).max() / efficiencyB)
-    GGas = resolution * PH_proportion2 * (Max_deficit2).max() / efficiencyPH \
-        + B_proportion2 * (Max_deficit2).max() / efficiencyB
+    # Assume all storage provided by PHES (lowest efficiency i.e. worst cast). Look at maximum generation years for energy penalty function
+    GHydro = resolution * (Max_deficit1 - Max_deficit2).max() / efficiencyPH + CBaseload.sum() * pow(10,3)
+    GBio = resolution * (Max_deficit2 - Max_deficit3).max() / efficiencyPH
+    GGas = resolution * (Max_deficit3).max() / efficiencyPH
     
     # Power and energy penalty functions
     PenEnergy = max(0, GHydro - Hydromax) + max(0, GBio - Biomax) + max(0, GGas - Gasmax)
@@ -70,11 +65,11 @@ def F(x):
     PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)
 
     # Existing capacity generation profiles    
-    gas = np.clip(Deficit2, 0, CGas.sum() * pow(10, 3))
-    hydro = np.clip(Deficit1 - Deficit2, 0, CPeak.sum() * pow(10, 3)) + baseload
-    bio = np.clip(Deficit1 - Deficit2 - hydro, 0, CPeak.sum() * pow(10, 3))
+    gas = np.clip(Deficit3, 0, CGas.sum() * pow(10, 3))
+    bio = np.clip(Deficit2 - Deficit3, 0, CBio.sum() * pow(10, 3))
+    hydro = np.clip(Deficit1 - Deficit2, 0, CHydro.sum() * pow(10, 3)) + baseload
 
-    # Simulation using the existing capacity generation profiles
+    # Simulation using the existing capacity generation profiles - required for storage average annual discharge
     Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=hydro, bio=bio, gas=gas)
 
     # Discharged energy from storage systems
@@ -92,12 +87,9 @@ def F(x):
     PenDC *= pow(10, 3) # GW to MW
 
     # Average annual electricity generated by existing capacity
-    GGas = resolution * (PH_proportion2 * Deficit2.sum() / efficiencyPH / years) \
-        +  (B_proportion2 * Deficit2.sum() / efficiencyPH / years)
-    GHydro = resolution * hydro_flexProportion * (PH_proportion1 * (Deficit1.sum() / years / efficiencyPH) \
-         + B_proportion1 * (Deficit1.sum() / years / efficiencyB)) - GGas
-    GBio = resolution * bio_flexProportion * (PH_proportion1 * (Deficit1.sum() / years / efficiencyPH) \
-         + B_proportion1 * (Deficit1.sum() / years / efficiencyB)) - GGas - GHydro
+    GGas = resolution * gas / years / efficiencyPH
+    GHydro = resolution * hydro / years / efficiencyPH
+    GBio = resolution * bio / years / efficiencyPH
     
     # Average annual electricity imported through external interconnections
     GInter = sum(sum(S.GInter)) * resolution / years if len(S.GInter) > 0 else 0
