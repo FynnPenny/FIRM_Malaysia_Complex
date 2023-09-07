@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import scenario, node, percapita
+from Optimisation import scenario, node, percapita, batteryScenario, gasScenario
 
 ###### NODAL LISTS ######
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
@@ -77,8 +77,8 @@ else:
         coverage = np.array([node])
 
     MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
-    TSPV = TSPV[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
-    #TSWind = TSWind[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
+    TSPV = TSPV[:, np.where(np.in1d(PVl, coverage)==True)[0]]
+    #TSWind = TSWind[:, np.where(np.in1d(Windl, coverage)==True)[0]]
 
     CBaseload = CBaseload[np.where(np.in1d(Nodel, coverage)==True)[0]]
     CHydro = CHydro[np.where(np.in1d(Nodel, coverage)==True)[0]]
@@ -120,6 +120,15 @@ allowance = 0 # Allowable annual deficit, MWh
 
 GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
 Gasmax = energy * 2 * pow(10,9) # MWh
+
+###### DECISION VARIABLE UPPER BOUNDS ######
+pv_ub = [1000.] * pzones
+phes_ub = [1000.] * (nodes - inters) + inters * [0]
+battery_ub = [1000.] * (nodes - inters) + inters * [0] if batteryScenario == True else nodes * [0]
+phes_s_ub = [10000.]
+battery_s_ub = [10000.] if batteryScenario == True else [0]
+inter_ub = [500.] * inters if node == 'APG_Full' else inters * [0]
+gas_ub = [50.] * (nodes - inters) + inters * [0] if gasScenario == True else nodes * [0]
 
 class Solution:
     """A candidate solution of decision variables CPV(i), CWind(i), CPHP(j), S-CPHS(j)"""
