@@ -127,7 +127,7 @@ def Analysis(optimisation_x,suffix):
         print("Hydro generation:", maxx(h))
         print("Remaining deficit:", Deficit.sum()/1e6)
         step = 1
-        while Deficit.sum() > allowance and step < 50:
+        while Deficit.sum() > allowance*years and step < 50:
             h,b,g = fill_deficit(Deficit,h,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,True,False,False,0.8,168)
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
             step += 1
@@ -148,14 +148,14 @@ def Analysis(optimisation_x,suffix):
         print("Bio generation:", maxx(b))
         print("Remaining deficit:", Deficit.sum()/1e6)
         step = 1
-        while Deficit.sum() > allowance and step < 50:
+        while Deficit.sum() > allowance*years and step < 50:
             h,b,g = fill_deficit(Deficit,h,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,False,True,False,0.8,168)
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
             step += 1
         print("Bio generation max:", maxx(b))
         print("Bio generation mean:", mean(b))
         print("Remaining deficit final:", Deficit.sum()/1e6)
-        if Deficit.sum() < allowance:
+        if Deficit.sum() < allowance*years:
             hydro = baseload
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=hydro, bio=b, gas=g)
             h,b,g = fill_deficit(Deficit,hydro,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,True,False,False,0.8,168)
@@ -163,7 +163,7 @@ def Analysis(optimisation_x,suffix):
             print("Hydro generation:", maxx(h))
             print("Remaining deficit:", Deficit.sum()/1e6)
             step = 1
-            while Deficit.sum() > allowance and step < 50:
+            while Deficit.sum() > allowance*years and step < 50:
                 h,b,g = fill_deficit(Deficit,hydro,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,True,False,False,0.8,168)
                 Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
                 step += 1
@@ -183,14 +183,14 @@ def Analysis(optimisation_x,suffix):
         print("Gas generation:", maxx(g))
         print("Remaining deficit:", Deficit.sum()/1e6)
         step = 1
-        while Deficit.sum() > allowance and step < 50:
+        while Deficit.sum() > allowance*years and step < 50:
             h,b,g = fill_deficit(Deficit,h,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,False,False,True,0.8,168)
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
             step += 1
         print("Gas generation max:", maxx(g))
         print("Gas generation mean:", mean(g))
         print("Remaining deficit final:", Deficit.sum()/1e6)
-        if Deficit.sum() < allowance:
+        if Deficit.sum() < allowance*years:
             bio = np.zeros(intervals)
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=bio, gas=g)
             h,b,g = fill_deficit(Deficit,hydro,bio,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,False,True,False,0.8,168)
@@ -198,14 +198,14 @@ def Analysis(optimisation_x,suffix):
             print("Bio generation:", maxx(b))
             print("Remaining deficit:", Deficit.sum()/1e6)
             step = 1
-            while Deficit.sum() > allowance and step < 50:
+            while Deficit.sum() > allowance*years and step < 50:
                 h,b,g = fill_deficit(Deficit,hydro,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,False,True,False,0.8,168)
                 Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
                 step += 1
             print("Bio generation max:", maxx(b))
             print("Bio generation mean:", mean(b))
             print("Remaining deficit final:", Deficit.sum()/1e6)
-        if Deficit.sum() < allowance:
+        if Deficit.sum() < allowance*years:
             hydro = baseload
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=hydro, bio=b, gas=g)
             h,b,g = fill_deficit(Deficit,hydro,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,True,False,False,0.8,168)
@@ -213,7 +213,7 @@ def Analysis(optimisation_x,suffix):
             print("Hydro generation:", maxx(h))
             print("Remaining deficit:", Deficit.sum()/1e6)
             step = 1
-            while Deficit.sum() > allowance and step < 50:
+            while Deficit.sum() > allowance*years and step < 50:
                 h,b,g = fill_deficit(Deficit,hydro,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,True,False,False,0.8,168)
                 Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
                 step += 1

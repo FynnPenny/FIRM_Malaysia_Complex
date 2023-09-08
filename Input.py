@@ -6,11 +6,11 @@
 import numpy as np
 from Optimisation import scenario, node, percapita, batteryScenario, gasScenario
 ######### DEBUG ##########
-""" scenario = 'HVAC'
+scenario = 'HVAC'
 node = 'APG_PMY_Only'
 percapita = 5
 batteryScenario = True
-gasScenario = True """
+gasScenario = True
 #########################
 
 ###### NODAL LISTS ######
@@ -136,6 +136,9 @@ phes_s_ub = [10000.]
 battery_s_ub = [10000.] if batteryScenario == True else [0]
 inter_ub = [500.] * inters if node == 'APG_Full' else inters * [0]
 gas_ub = [50.] * (nodes - inters) + inters * [0] if gasScenario == True else nodes * [0]
+
+""" print(pv_ub, phes_ub, battery_ub, phes_s_ub, battery_s_ub, inter_ub, gas_ub)
+print(pidx,phidx,bidx,iidx,gidx) """
 
 class Solution:
     """A candidate solution of decision variables CPV(i), CWind(i), CPHP(j), S-CPHS(j)"""

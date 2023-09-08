@@ -240,13 +240,13 @@ if __name__ == '__main__':
     # Calculate the levelised cost of generation
     GPV = S.GPV.sum() * pow(10, -6) * resolution / years
 #    LCOG = (CostPV + CostWind + CostHydro + CostBio) * pow(10, 3) / (GPV + GWind + GHydro + GBio)
-    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (S.GPV.sum() + GHydro + GBio + GGas + GInter)
+    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro* pow(10,-6) + GBio* pow(10,-6) + GGas* pow(10,-6) + GInter* pow(10,-6))
     LCOGP = CostPV * pow(10, 3) / GPV if GPV!=0 else 0
 #    LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
-    LCOGH = CostHydro * pow(10, 3) / GHydro if GHydro!=0 else 0
-    LCOGB = CostBio * pow(10, 3) / GBio if GBio!=0 else 0
-    LCOGG = CostGas * pow(10, 3) / GGas if GGas != 0 else 0
-    LCOGI = CostInter * pow(10, 3) / GInter if GInter != 0 else 0
+    LCOGH = CostHydro * pow(10, 3) / (GHydro* pow(10,-6)) if GHydro!=0 else 0
+    LCOGB = CostBio * pow(10, 3) / (GBio* pow(10,-6)) if GBio!=0 else 0
+    LCOGG = CostGas * pow(10, 3) / (GGas* pow(10,-6)) if GGas != 0 else 0
+    LCOGI = CostInter * pow(10, 3) / (GInter* pow(10,-6)) if GInter != 0 else 0
 
     # Calculate the levelised cost of balancing
     LCOB = LCOE - LCOG

@@ -120,7 +120,7 @@ def GGTA(solution):
     CPV, CInter, CPHP, CBP, CPHS, CBS = (sum(solution.CPV), sum(solution.CInter), sum(solution.CPHP), sum(solution.CBP), solution.CPHS, solution.CBS) # GW, GWh
 #    CWind = sum(solution.CWind)
     CapHydro, CapBio = CHydro.sum(), CBio.sum() # GW
-    CapGas = (solution.MGas.sum(axis=1)).max() # GW
+    CapGas = (solution.MGas.sum(axis=1)).max() * pow(10,-3) # GW
 
     # Import generation energy [GWh] from the least-cost solution
     GPV, GHydro, GGas, GInter, GBio = map(lambda x: x * pow(10, -6) * resolution / years, (solution.GPV.sum(), solution.MHydro.sum(), solution.MGas.sum(), solution.MInter.sum(), solution.MBio.sum())) # TWh p.a.
