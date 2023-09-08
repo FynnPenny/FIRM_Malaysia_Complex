@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec  7 14:17:37 2020
-@author: cheng
+@author: cheng + tim
 """
 
 from Input import *
