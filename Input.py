@@ -6,11 +6,11 @@
 import numpy as np
 from Optimisation import scenario, node, percapita, batteryScenario, gasScenario
 ######### DEBUG ##########
-scenario = 'HVAC'
+""" scenario = 'HVAC'
 node = 'APG_PMY_Only'
 percapita = 5
 batteryScenario = True
-gasScenario = True
+gasScenario = True """
 #########################
 
 ###### NODAL LISTS ######
