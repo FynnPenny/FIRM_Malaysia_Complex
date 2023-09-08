@@ -209,12 +209,17 @@ def GGTA(solution):
 
     size = 28 + len(list(solution.CDC))
     D = np.zeros((1, size))
+    header = 'Annual demand (PWh),Annual Energy Losses (PWh),' \
+             'PV Capacity (GW),PV Avg Annual Gen (GWh),Hydro Capacity (GW),Hydro Avg Annual Gen (GWh),Bio Capacity (GW),Bio Avg Annual Gen (GWh),Gas Capacity (GW),Gas Avg Annual Gen (GWh),Inter Capacity (GW),Inter Avg Annual Gen (GWh),' \
+             'PHES-PowerCap (GW),Battery-PowerCap (GW),PHES-EnergyCap (GWh),Battery-EnergyCap (GWh),' \
+             'KDPE,TEPA,SEME,MEJO,PESE,SBSW,KTTE,PASE,JOSW,THKD,INSE,PHSB,' \
+             'LCOE,LCOG,LCOB,LCOG_PV, LCOG_Hydro,LCOG_Bio,LCOG_Gas,LCOG_Inter,LCOBS_PHES,LCOBS_Battery,LCOBT, LCOBL'
     D[0, :] = [Energy * pow(10, 3), Loss * pow(10, 3), CPV, GPV, CapHydro, GHydro, CapBio, GBio, CapGas, GGas, CInter, GInter] \
               + [CPHP, CBP, CPHS, CBS] \
               + list(solution.CDC) \
               + [LCOE, LCOG, LCOB, LCOGP, LCOGH, LCOGB, LCOGG, LCOGI, LCOBS_P, LCOBS_B, LCOBT, LCOBL] # + [CWind, GWind, LCOGW]
 
-    np.savetxt('Results/GGTA_{}_{}_{}.csv'.format(node,scenario,percapita), D, fmt='%f', delimiter=',')
+    np.savetxt('Results/GGTA_{}_{}_{}.csv'.format(node,scenario,percapita), D, header=header, fmt='%f', delimiter=',')
     print('Energy generation, storage and transmission information is produced.')
 
     return True
@@ -233,9 +238,9 @@ def Information(x, hydro , bio, gas):
     except AssertionError:
         pass
     
-    assert np.reshape(hydro, (-1, 8760)).sum(axis=-1).max() <= Hydromax, "Hydro generation exceeds requirement"
-    assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, "Bio generation exceeds requirement"
-    assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, "Gas generation exceeds requirement"
+    assert np.reshape(hydro, (-1, 8760)).sum(axis=-1).max() <= Hydromax, f"Hydro generation exceeds requirement {np.reshape(hydro, (-1, 8760)).sum(axis=-1).max()} {Hydromax}"
+    assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, f"Bio generation exceeds requirement {np.reshape(bio, (-1, 8760)).sum(axis=-1).max()} {Biomax}"
+    assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, f"Gas generation exceeds requirement {np.reshape(gas, (-1, 8760)).sum(axis=-1).max()} {Gasmax}"
 
     #S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
     S.TDC = Transmission(S, output=True)
@@ -288,7 +293,7 @@ def Information(x, hydro , bio, gas):
     return True
 
 if __name__ == '__main__':
-    suffix = "_SE_HVDC_5.csv"
+    suffix = "_APG_PMY_Only_HVAC_5.csv"
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
     hydro = np.genfromtxt('Results/Dispatch_Hydro{}'.format(suffix), delimiter=',', skip_header=1)
     bio = np.genfromtxt('Results/Dispatch_Bio{}'.format(suffix), delimiter=',', skip_header=1)

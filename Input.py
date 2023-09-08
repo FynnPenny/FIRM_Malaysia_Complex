@@ -5,6 +5,13 @@
 
 import numpy as np
 from Optimisation import scenario, node, percapita, batteryScenario, gasScenario
+######### DEBUG ##########
+scenario = 'HVAC'
+node = 'APG_PMY_Only'
+percapita = 5
+batteryScenario = True
+gasScenario = True
+#########################
 
 ###### NODAL LISTS ######
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
@@ -116,7 +123,7 @@ contingency_ph = list(0.25 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 contingency_b = list(0.1 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 #manage = 0 # weeks
 #allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiencyPH # MWh
-allowance = 0 # Allowable annual deficit, MWh
+allowance = min(0.00002*np.reshape(MLoad.sum(axis=1), (-1, 8760)).sum(axis=-1)) # Allowable annual deficit of 0.002%, MWh
 
 GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
 Gasmax = energy * 2 * pow(10,9) # MWh
