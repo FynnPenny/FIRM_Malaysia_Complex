@@ -7,7 +7,7 @@ import numpy as np
 from Optimisation import scenario, node, percapita, batteryScenario, gasScenario
 ######### DEBUG ##########
 """ scenario = 'HVAC'
-node = 'APG_PMY_Only'
+node = 'APG_MY_Isolated'
 percapita = 5
 batteryScenario = True
 gasScenario = True """

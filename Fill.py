@@ -232,6 +232,6 @@ def Analysis(optimisation_x,suffix):
     return True
 
 if __name__=='__main__':
-    suffix = "_APG_PMY_Only_HVAC_5.csv"
+    suffix = "_APG_MY_Isolated_HVAC_5.csv"
     optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix).format(node,scenario,percapita), delimiter=',')
     Analysis(optimisation_x,'.csv')
