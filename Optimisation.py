@@ -136,5 +136,5 @@ if __name__=='__main__':
     endtime = dt.datetime.now()
     print("Optimisation took", endtime - starttime)
 
-    from Fill import Analysis
-    Analysis(result.x,'_{}_{}_{}.csv'.format(node,scenario,percapita))
+    """ from Fill import Analysis
+    Analysis(result.x,'_{}_{}_{}.csv'.format(node,scenario,percapita)) """
