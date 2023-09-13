@@ -16,6 +16,8 @@ gasScenario = True """
 ###### NODAL LISTS ######
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
 PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
+pv_ub_np = np.array([1000.] + [130., 130.] + [465.] + [388.] + [463.] + [1000., 1000.] + [1000.] + [1000.] + [713.,713.] + [303., 303., 303.])
+phes_ub_np = np.array([47.] + [1150.] + [330.] + [489.] + [11.] + [1157.] + [2.] + [871.] + [224.] + [400.] + [0.] + [0.] + [0.])
 #Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
 Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1
@@ -99,7 +101,11 @@ else:
 
     baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
 
+    pv_ub_np = pv_ub_np[np.where(np.in1d(PVl, coverage)==True)[0]]
+    phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
+
     Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
+    
 #    Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
 
 # Scenario values
@@ -129,16 +135,13 @@ GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
 Gasmax = energy * 2 * pow(10,9) # MWh
 
 ###### DECISION VARIABLE UPPER BOUNDS ######
-pv_ub = [1000.] * pzones
-phes_ub = [1000.] * (nodes - inters) + inters * [0]
+pv_ub = [x for x in pv_ub_np]
+phes_ub = [x for x in phes_ub_np]
 battery_ub = [1000.] * (nodes - inters) + inters * [0] if batteryScenario == True else nodes * [0]
 phes_s_ub = [10000.]
 battery_s_ub = [10000.] if batteryScenario == True else [0]
 inter_ub = [500.] * inters if node == 'APG_Full' else inters * [0]
 gas_ub = [50.] * (nodes - inters) + inters * [0] if gasScenario == True else nodes * [0]
-
-""" print(pv_ub, phes_ub, battery_ub, phes_s_ub, battery_s_ub, inter_ub, gas_ub)
-print(pidx,phidx,bidx,iidx,gidx) """
 
 class Solution:
     """A candidate solution of decision variables CPV(i), CWind(i), CPHP(j), S-CPHS(j)"""
