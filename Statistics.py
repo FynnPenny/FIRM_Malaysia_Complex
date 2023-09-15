@@ -81,7 +81,7 @@ def LPGM(solution):
              'PHES-Storage (MWh),Battery-Storage (MWh),' \
              'KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB'
 
-    np.savetxt('Results/LPGM_{}_{}_{}_Network.csv'.format(node,scenario,percapita), C, fmt='%s', delimiter=',', header=header, comments='')
+    np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_Network.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), C, fmt='%s', delimiter=',', header=header, comments='')
 
     if 'APG' in node:
         header = 'Date & time,Operational demand,Hydrogen (MW),' \
@@ -100,7 +100,7 @@ def LPGM(solution):
             C = np.around(C.transpose())
 
             C = np.insert(C.astype('str'), 0, datentime, axis=1)
-            np.savetxt('Results/LPGM_{}_{}_{}_{}.csv'.format(node,scenario,percapita, solution.Nodel[j]), C, fmt='%s', delimiter=',', header=header, comments='')
+            np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario, solution.Nodel[j]), C, fmt='%s', delimiter=',', header=header, comments='')
 
     print('Load profiles and generation mix is produced.')
 
@@ -219,7 +219,7 @@ def GGTA(solution):
               + list(solution.CDC) \
               + [LCOE, LCOG, LCOB, LCOGP, LCOGH, LCOGB, LCOGG, LCOGI, LCOBS_P, LCOBS_B, LCOBT, LCOBL] # + [CWind, GWind, LCOGW]
 
-    np.savetxt('Results/GGTA_{}_{}_{}.csv'.format(node,scenario,percapita), D, header=header, fmt='%f', delimiter=',')
+    np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), D, header=header, fmt='%f', delimiter=',')
     print('Energy generation, storage and transmission information is produced.')
 
     return True
@@ -293,7 +293,7 @@ def Information(x, hydro , bio, gas):
     return True
 
 if __name__ == '__main__':
-    suffix = "_APG_PMY_Only_HVAC_5.csv"
+    suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
     hydro = np.genfromtxt('Results/Dispatch_Hydro{}'.format(suffix), delimiter=',', skip_header=1)
     bio = np.genfromtxt('Results/Dispatch_Bio{}'.format(suffix), delimiter=',', skip_header=1)

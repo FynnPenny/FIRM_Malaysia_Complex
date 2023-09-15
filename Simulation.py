@@ -91,7 +91,7 @@ if __name__ == '__main__':
     from Input import *
     from Network import Transmission 
 
-    suffix = "_APG_PMY_Only_HVAC_5.csv"
+    suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
     
     # Initialise the optimisation

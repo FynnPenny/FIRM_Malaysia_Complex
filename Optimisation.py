@@ -105,7 +105,7 @@ def F(x):
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
     LCOE = cost / abs(energy - loss)
     
-    with open('Results/record_{}_{}_{}.csv'.format(node,scenario,percapita), 'a', newline="") as csvfile:
+    with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,LCOE]))
 
@@ -129,7 +129,7 @@ if __name__=='__main__':
                                     maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
                                     disp=True, polish=False, updating='deferred', workers=-1) ###### CHANGE WORKERS BACK TO -1
 
-    with open('Results/Optimisation_resultx_{}_{}_{}.csv'.format(node,scenario,percapita), 'w', newline="") as csvfile:
+    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'w', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
