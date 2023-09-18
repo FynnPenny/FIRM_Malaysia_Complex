@@ -14,17 +14,31 @@ parser.add_argument('-p', default=5, type=int, required=False, help='popsize=2, 
 parser.add_argument('-m', default=0.5, type=float, required=False, help='mutation=0.5')
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
-parser.add_argument('-n', default='APG_PMY_Only', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
+parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
 parser.add_argument('-s', default='HVAC', type=str, required=False, help='HVDC, HVAC')
-parser.add_argument('-H', default=True, type=bool, required=False, help='Hydrogen Firming=True,False')
-parser.add_argument('-b', default=True, type=bool, required=False, help='Battery Coopimisation=True,False')
+parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
+parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 args = parser.parse_args()
 
 scenario = args.s
 node = args.n
 percapita = args.e
-gasScenario = args.H
-batteryScenario = args.b
+
+if args.H == "True":
+    gasScenario = True
+elif args.H == "False":
+    gasScenario = False
+else:
+    print("-H must be True or False")
+    exit()
+
+if args.b == "True":
+    batteryScenario = True
+elif args.b == "False":
+    batteryScenario = False
+else:
+    print("-b must be True or False")
+    exit()
 
 from Input import *
 from Simulation import Reliability
@@ -104,6 +118,8 @@ def F(x):
     loss = np.sum(abs(TDC), axis=0) * TLoss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
     LCOE = cost / abs(energy - loss)
+
+    print(x)
     
     with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
