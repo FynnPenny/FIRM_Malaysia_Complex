@@ -118,8 +118,6 @@ def F(x):
     loss = np.sum(abs(TDC), axis=0) * TLoss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
     LCOE = cost / abs(energy - loss)
-
-    print(x)
     
     with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
@@ -152,5 +150,5 @@ if __name__=='__main__':
     endtime = dt.datetime.now()
     print("Optimisation took", endtime - starttime)
 
-    """ from Fill import Analysis
-    Analysis(result.x,'_{}_{}_{}.csv'.format(node,scenario,percapita)) """
+    from Fill import Analysis
+    Analysis(result.x,'_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario))

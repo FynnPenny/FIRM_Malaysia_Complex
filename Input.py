@@ -65,7 +65,10 @@ efficiencyPH = 0.8
 efficiencyB = 0.9
 
 ###### COST FACTORS ######
-factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
+if scenario=='HVDC':
+    factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
+else:
+    factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
 firstyear, finalyear, timestep = (2012, 2021, 1)
