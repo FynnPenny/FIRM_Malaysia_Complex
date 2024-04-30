@@ -118,7 +118,8 @@ def F(x):
     loss = np.sum(abs(TDC), axis=0) * TLoss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
     LCOE = cost / abs(energy - loss)
-    
+    print(LCOE)
+
     with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,LCOE]))

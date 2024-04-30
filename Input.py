@@ -18,14 +18,14 @@ Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'T
 PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
 pv_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
 phes_ub_np = np.array([55.] + [1200.] + [368.] + [552.] + [13.] + [1268.] + [2.] + [942.] + [255.] + [2000.] + [0.] + [0.] + [0.])
-#Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
+Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
 Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1
 
 ###### DATA IMPORTS ######
 MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
 TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
-#TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
+TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
 
 assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
@@ -90,7 +90,7 @@ else:
 
     MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
     TSPV = TSPV[:, np.where(np.in1d(PVl, coverage)==True)[0]]
-    #TSWind = TSWind[:, np.where(np.in1d(Windl, coverage)==True)[0]]
+    TSWind = TSWind[:, np.where(np.in1d(Windl, coverage)==True)[0]]
 
     CBaseload = CBaseload[np.where(np.in1d(Nodel, coverage)==True)[0]]
     CHydro = CHydro[np.where(np.in1d(Nodel, coverage)==True)[0]]
@@ -107,9 +107,9 @@ else:
     pv_ub_np = pv_ub_np[np.where(np.in1d(PVl, coverage)==True)[0]]
     phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
 
-    Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
+#    Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
     
-#    Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
+    Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
 
 # Scenario values
 if scenario == 'HVAC':
@@ -119,9 +119,9 @@ if scenario == 'HVAC':
 intervals, nodes = MLoad.shape
 years = int(resolution * intervals / 8760)
 pzones = TSPV.shape[1] # Solar PV and wind sites
-# wzones = TSWind.shape[1]
-# pidx, widx, phidx, bidx = (pzones, pzones + wzones, pzones + wzones + nodes, pzones + wzones + 2*nodes) # Index of solar PV (sites), wind (sites), pumped hydro power (service areas), and battery power (service areas)
-pidx, phidx, bidx = (pzones, pzones + nodes, pzones + 2*nodes) # Index of solar PV (sites), wind (sites), pumped hydro power (service areas), and battery power (service areas)
+wzones = TSWind.shape[1]
+pidx, widx, phidx, bidx = (pzones, pzones + wzones, pzones + wzones + nodes, pzones + wzones + 2*nodes) # Index of solar PV (sites), wind (sites), pumped hydro power (service areas), and battery power (service areas)
+#pidx, phidx, bidx = (pzones, pzones + nodes, pzones + 2*nodes) # Index of solar PV (sites), wind (sites), pumped hydro power (service areas), and battery power (service areas)
 inters = len(Interl) # Number of external interconnections
 iidx = bidx + 2 + inters # Index of external interconnections, noting pumped hydro energy (network) and battery energy (network) decision variables after the index of battery power
 gidx = iidx + nodes # Index of hydrogen (service areas)
@@ -157,12 +157,12 @@ class Solution:
         self.baseload = baseload
 
         self.CPV = list(x[: pidx]) # CPV(i), GW
-#        self.CWind = list(x[pidx: widx]) # CWind(i), GW
+        self.CWind = list(x[pidx: widx]) # CWind(i), GW
         self.GPV = TSPV * np.tile(self.CPV, (intervals, 1)) * pow(10, 3) # GPV(i, t), GW to MW
-#        self.GWind = TSWind * np.tile(self.CWind, (intervals, 1)) * pow(10, 3) # GWind(i, t), GW to MW
+        self.GWind = TSWind * np.tile(self.CWind, (intervals, 1)) * pow(10, 3) # GWind(i, t), GW to MW
 
-#        self.CPHP = list(x[widx: phidx]) # CPHP(j), GW
-        self.CPHP = list(x[pidx: phidx]) # CPHP(j), GW
+        self.CPHP = list(x[widx: phidx]) # CPHP(j), GW
+#        self.CPHP = list(x[pidx: phidx]) # CPHP(j), GW
         self.CBP = list(x[phidx: bidx])
         self.CPHS = x[bidx] # S-CPHS(j), GWh
         self.CBS = x[bidx+1] 
@@ -175,7 +175,7 @@ class Solution:
         self.CGas = list(x[iidx: ]) # GW
 
         self.Nodel, self.PVl, self.Interl = (Nodel, PVl, Interl)
-#        self.Windl = Windl
+        self.Windl = Windl
         self.node = node
         self.scenario = scenario
         self.allowance = allowance

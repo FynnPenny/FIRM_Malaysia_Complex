@@ -196,7 +196,7 @@ if __name__ == '__main__':
     print("Cost Factors")
     # Calculate the annual costs for each technology
     CostPV = factor['PV'] * sum(S.CPV) # A$b p.a.
-#    CostWind = factor['Wind'] * CWind # A$b p.a.
+    CostWind = factor['Wind'] * sum(S.CWind) # A$b p.a.
     CostHydro = factor['Hydro'] * GHydro * pow(10,-6)# A$b p.a.
     CostBio = factor['Bio'] * GBio * pow(10,-6)# A$b p.a.
     CostGas = factor['GasCap'] * sum(CGas) + factor['GasFuel'] * GGas * pow(10,-6) # A$b p.a.
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     # Calculate the levelised cost of elcetricity at a network level
     LCOE = (CostPV + CostInter + CostBattery + CostGas + CostHydro + CostBio + CostPH + CostDC + CostAC) / (Energy - Loss) # + CostWind / (Energy - Loss)
     LCOEPV = CostPV / (Energy - Loss)
-#    LCOEWind = CostWind / (Energy - Loss)
+    LCOEWind = CostWind / (Energy - Loss)
     LCOEInter = CostInter / (Energy - Loss)
     LCOEHydro = CostHydro / (Energy - Loss)
     LCOEBio = CostBio / (Energy - Loss)
@@ -239,10 +239,11 @@ if __name__ == '__main__':
     
     # Calculate the levelised cost of generation
     GPV = S.GPV.sum() * pow(10, -6) * resolution / years
-#    LCOG = (CostPV + CostWind + CostHydro + CostBio) * pow(10, 3) / (GPV + GWind + GHydro + GBio)
-    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro* pow(10,-6) + GBio* pow(10,-6) + GGas* pow(10,-6) + GInter* pow(10,-6))
+    GWind = S.GWind.sum() * pow(10, -6) * resolution / years
+    LCOG = (CostPV + CostWind + CostHydro + CostBio) * pow(10, 3) / (GPV + GWind + GHydro + GBio)
+#    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro* pow(10,-6) + GBio* pow(10,-6) + GGas* pow(10,-6) + GInter* pow(10,-6))
     LCOGP = CostPV * pow(10, 3) / GPV if GPV!=0 else 0
-#    LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
+    LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
     LCOGH = CostHydro * pow(10, 3) / (GHydro* pow(10,-6)) if GHydro!=0 else 0
     LCOGB = CostBio * pow(10, 3) / (GBio* pow(10,-6)) if GBio!=0 else 0
     LCOGG = CostGas * pow(10, 3) / (GGas* pow(10,-6)) if GGas != 0 else 0
@@ -260,7 +261,7 @@ if __name__ == '__main__':
     print('\u2022 LCOG:', LCOG)
     print('\u2022 LCOB:', LCOB)
     print('\u2022 LCOG-PV:', LCOGP)
-#    print('\u2022 LCOG-Wind:', LCOGW, '(%s)' % CFWind)
+    print('\u2022 LCOG-Wind:', LCOGW)
     print('\u2022 LCOG-Hydro:', LCOGH)
     print('\u2022 LCOG-Bio:', LCOGB)
     print('\u2022 LCOG-External_Imports:', LCOGI)

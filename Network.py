@@ -9,18 +9,21 @@ def Transmission(solution, output=False):
     """TDC = Network.Transmission(S)"""
 
     Nodel, PVl, Interl = (solution.Nodel, solution.PVl, solution.Interl)
-#    Windl = solution.Windl
+    Windl = solution.Windl
     intervals, nodes = (solution.intervals, solution.nodes)
 
     MPV, MInter = map(np.zeros, [(nodes, intervals)] * 2)
-#    MWind = map(np.zeros, [(nodes, intervals)] * 1)
+    MWind = map(np.zeros, [(nodes, intervals)] * 1)
     for i, j in enumerate(Nodel):
-        MPV[i, :] = solution.GPV[:, np.where(PVl==j)[0]].sum(axis=1)
-#        MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
+        MPV  [i, :] = solution.GPV  [:, np.where(PVl  ==j)[0]].sum(axis=1)
+        MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
+        print(np.where(Windl==j)[0])
+        print(MWind)
+
         if solution.node=='APG_Full':
             MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)
     MPV, MInter = (MPV.transpose(), MInter.transpose()) # Sij-GPV(t, i), Sij-GWind(t, i), MW
-#    MWind = MWind.transpose()
+    MWind = MWind.transpose()
   
     CHydro = solution.CHydro
     hfactor = np.tile(CHydro,(intervals, 1)) / CHydro.sum() if CHydro.sum() > 0 else np.tile(CHydro,(intervals, 1))
@@ -44,7 +47,7 @@ def Transmission(solution, output=False):
     MDeficit = np.tile(solution.Deficit, (nodes, 1)).transpose() * defactor # MDeficit: EDE(j, t)
 
     M_minFactors = np.full((intervals, nodes), pow(10,-9)) # Matrix of 10^(-9) required to distribute spillage between nodes when no solar generation
-    MPW = MPV + M_minFactors # + MWind
+    MPW = MPV + M_minFactors + MWind
     spfactor = np.divide(MPW, MPW.sum(axis=1)[:, None], where=MPW.sum(axis=1)[:, None]!=0)
     MSpillage = np.tile(solution.Spillage, (nodes, 1)).transpose() * spfactor # MSpillage: ESP(j, t)
 
@@ -99,7 +102,7 @@ def Transmission(solution, output=False):
         MStoragePH = np.tile(solution.StoragePH, (nodes, 1)).transpose() * pcfactor # SPH(t, j), MWh
         MStorageB = np.tile(solution.StoragePH, (nodes, 1)).transpose() * bfactor # SPH(t, j), MWh
         solution.MPV, solution.MInter, solution.MHydro, solution.MBio, solution.MGas = (MPV, MInter, MHydro, MBio, MGas)
-#        solution.MWind = MWind        
+        solution.MWind = MWind        
         solution.MDischargePH, solution.MChargePH, solution.MStoragePH = (MDischargePH, MChargePH, MStoragePH)
         solution.MDischargeB, solution.MChargeB, solution.MStorageB = (MDischargeB, MChargeB, MStorageB)
         solution.MDeficit, solution.MSpillage = (MDeficit, MSpillage)
