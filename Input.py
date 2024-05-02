@@ -14,6 +14,15 @@ gasScenario = True """
 #########################
 
 ###### NODAL LISTS ######
+# Nodel       = np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
+# PVl         = np.array(['NSW']*7 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*3 + ['SA']*6 + ['TAS']*0 + ['VIC']*1 + ['WA']*1 + ['NT']*1)
+# Windl       = np.array(['NSW']*8 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*2 + ['SA']*8 + ['TAS']*4 + ['VIC']*4 + ['WA']*3 + ['NT']*1)
+# pv_ub_np    = np.array([365. ]*7 + [887. ]*1 + [257. ]*2 + [1071.]*3 + [260.]*6 + [284. ]*0 + [1070.]*1 + [163.]*1 + [103.]*1)
+# wind_ub_np  = np.array([365. ]*8 + [887. ]*1 + [257. ]*2 + [1071.]*2 + [260.]*8 + [284. ]*4 + [1070.]*4 + [163.]*3 + [103.]*1)
+# phes_ub_np  = np.array([55.  ]   + [1200.]   + [368. ]   + [552. ]   + [13. ]   + [1268.]   + [2.   ]   + [942.]   + [255.]+ [0.] + [0.] + [0.]) # why are there three extra nodes???
+# Interl      = np.array([]) No external interconnections for Australia
+# resolution = 1
+
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
 PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
 pv_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
@@ -23,7 +32,11 @@ Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1
 Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
 resolution = 1
 
+
 ###### DATA IMPORTS ######
+
+
+
 MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
 TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
 TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
