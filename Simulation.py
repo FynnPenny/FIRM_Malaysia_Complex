@@ -150,7 +150,7 @@ if __name__ == '__main__':
     GBattery = DischargeB.sum() * resolution / years * pow(10,-6)
 
     # Transmission capacity calculations
-    TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
+    TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW 
     CDC = np.amax(abs(TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
 
     # Transmission penalty function
@@ -187,9 +187,9 @@ if __name__ == '__main__':
     print("LCOE: ", LCOE)
 
     # Import cost factors
-    if scenario == 'HVDC':
+    if transmissionScenario == 'HVDC':
         factor = np.genfromtxt('Data/factor.csv', dtype=None, delimiter=',', encoding=None)
-    elif scenario == 'HVAC':
+    elif transmissionScenario == 'HVAC':
         factor = np.genfromtxt('Data/factor_hvac.csv', dtype=None, delimiter=',', encoding=None)
         
     factor = dict(factor)
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     CostPH = factor['PHP'] * sum(S.CPHP) + factor['PHS'] * S.CPHS + factor['PHES-VOM'] * DischargePH.sum() * resolution / years * pow(10,-6) # A$b p.a.
     CostInter = factor['Inter'] * GInter # A$b p.a.
     CostBattery = factor['BP'] * sum(S.CBP) + factor['BS'] * S.CBS + factor['B-VOM'] * DischargeB.sum() * resolution / years * pow(10,-6) # A$b p.a.
-#    if scenario>=21:
+#    if node>=21:
 #        CostPH -= factor['LegPH']
 
     CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     CostDC = (CostDC * CDC).sum() if len(CDC) > 0 else 0 # A$b p.a.
     CostAC = (CostAC * CAC).sum() if len(CAC) > 0 else 0 # A$b p.a.
 
-#    if scenario>=21:
+#    if node>=21:
 #        CostDC -= factor['LegINTC']
 
     CostAC += factor['ACPV'] * sum(S.CPV) # + factor['ACWind'] * CWind # A$b p.a.

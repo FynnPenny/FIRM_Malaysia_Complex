@@ -19,9 +19,9 @@ def Transmission(solution, output=False):
         MPV  [i, :] = solution.GPV  [:, np.where(PVl  ==j)[0]].sum(axis=1)
         MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
 
-
         if solution.node=='APG_Full':
             MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)
+
     MPV, MInter = (MPV.transpose(), MInter.transpose()) # Sij-GPV(t, i), Sij-GWind(t, i), MW
     MWind = MWind.transpose()
   
@@ -66,7 +66,7 @@ def Transmission(solution, output=False):
     
     coverage = solution.coverage
     if len(coverage) > 1:
-        # Imorts into external nodes
+        # Imports into external nodes
         THKD = -1 * MImport[:, np.where(Nodel=='TH')[0][0]] if 'TH' in coverage else np.zeros(intervals)
         PHSB = -1 * MImport[:, np.where(Nodel=='PH')[0][0]] if 'PH' in coverage else np.zeros(intervals)
         INSE = MImport[:, np.where(Nodel=='IN')[0][0]] if 'IN' in coverage else np.zeros(intervals)

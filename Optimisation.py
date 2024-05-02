@@ -15,12 +15,14 @@ parser.add_argument('-m', default=0.5, type=float, required=False, help='mutatio
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
 parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
-parser.add_argument('-s', default='HVAC', type=str, required=False, help='HVDC, HVAC')
+#parser.add_argument('-s', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
+parser.add_argument('-t', default='HVAC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 args = parser.parse_args()
 
-scenario = args.s
+#scenario = args.s
+transmissionScenario = args.t
 node = args.n
 percapita = args.e
 
@@ -94,7 +96,8 @@ def F(x):
     GPHES = DischargePH.sum() * resolution / years * pow(10,-6) # TWh per year
     GBattery = DischargeB.sum() * resolution / years * pow(10,-6)
 
-    # Transmission capacity calculations
+    # Transmission capacity calculations TODO: Change to Aus
+    # TDC = Transmission(S) if node > 10 else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
     TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
     CDC = np.amax(abs(TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
 
@@ -120,7 +123,7 @@ def F(x):
     LCOE = cost / abs(energy - loss)
     print(LCOE)
 
-    with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
+    with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,LCOE]))
 
@@ -147,7 +150,7 @@ if __name__=='__main__':
                                     maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
                                     disp=True, polish=False, updating='deferred', workers=-1) ###### CHANGE WORKERS BACK TO -1
 
-    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), 'w', newline="") as csvfile:
+    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), 'w', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
@@ -155,4 +158,4 @@ if __name__=='__main__':
     print("Optimisation took", endtime - starttime)
 
     from Fill import Analysis
-    Analysis(result.x,'_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario))
+    Analysis(result.x,'_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario))

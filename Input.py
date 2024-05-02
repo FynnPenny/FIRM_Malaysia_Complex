@@ -4,9 +4,9 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import scenario, node, percapita, batteryScenario, gasScenario
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario
 ######### DEBUG ##########
-""" scenario = 'HVAC'
+""" transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
 percapita = 5
 batteryScenario = True
@@ -42,6 +42,7 @@ MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',',
 TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
 TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
 
+
 assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
 constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
@@ -61,11 +62,11 @@ externalImports = 0.05 if node=='APG_Full' else 0
 CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 ###### TRANSMISSION LOSSES ######
-if scenario=='HVDC':
+if transmissionScenario=='HVDC':
     # HVDC backbone scenario
     dc_flags = np.array([True,True,True,True,True,True,True,True,True,True,True,True])
     
-elif scenario=='HVAC':
+elif transmissionScenario=='HVAC':
     # HVAC backbone scenario
     dc_flags = np.array([False,False,False,False,False,False,False,False,True,True,True,True])
     
@@ -80,18 +81,36 @@ efficiencyPH = 0.8
 efficiencyB = 0.9
 
 ###### COST FACTORS ######
-if scenario=='HVDC':
+if transmissionScenario=='HVDC':
     factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
 else:
     factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
-firstyear, finalyear, timestep = (2012, 2021, 1)
+# firstyear, finalyear, timestep = (2020,2029,1) # This does nothing??
+# firstyear, finalyear, timestep = (2012, 2021, 1)
 
 ###### SCENARIO ADJUSTMENTS #######
 # Node values
 if 'APG_Full' == node:
     coverage = Nodel
+
+elif 0: # TODO: Changes need to be made for aus scenarios
+    if node<=17: 
+        coverage = Nodel[node % 10]
+
+    if 20 < node <=29 : # TODO Add scenario descriptions
+        coverage = [np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC']), # description1
+            np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
+            np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
+            np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
+            np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC']),
+            np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
+            np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
+            np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])][node % 10 - 1]
+    
+    if node >= 30:
+        coverage = np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
 
 else:
     if 'APG_PMY_Only' == node:
@@ -103,32 +122,32 @@ else:
     else:
         coverage = np.array([node])
 
-    MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
-    TSPV = TSPV[:, np.where(np.in1d(PVl, coverage)==True)[0]]
-    TSWind = TSWind[:, np.where(np.in1d(Windl, coverage)==True)[0]]
+MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
+TSPV = TSPV[:, np.where(np.in1d(PVl, coverage)==True)[0]]
+TSWind = TSWind[:, np.where(np.in1d(Windl, coverage)==True)[0]]
 
-    CBaseload = CBaseload[np.where(np.in1d(Nodel, coverage)==True)[0]]
-    CHydro = CHydro[np.where(np.in1d(Nodel, coverage)==True)[0]]
-    CBio = CBio[np.where(np.in1d(Nodel, coverage)==True)[0]]
-    CPeak = CHydro + CBio - CBaseload # GW
+CBaseload = CBaseload[np.where(np.in1d(Nodel, coverage)==True)[0]]
+CHydro = CHydro[np.where(np.in1d(Nodel, coverage)==True)[0]]
+CBio = CBio[np.where(np.in1d(Nodel, coverage)==True)[0]]
+CPeak = CHydro + CBio - CBaseload # GW
 
-    EHydro, EBio = [x[np.where(np.in1d(Nodel, coverage)==True)[0]] for x in (EHydro, EBio)]
+EHydro, EBio = [x[np.where(np.in1d(Nodel, coverage)==True)[0]] for x in (EHydro, EBio)]
 
-    Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
-    Biomax = EBio.sum() * pow(10,3) # GWh to MWh per year
+Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
+Biomax = EBio.sum() * pow(10,3) # GWh to MWh per year
 
-    baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
+baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
 
-    pv_ub_np = pv_ub_np[np.where(np.in1d(PVl, coverage)==True)[0]]
-    wind_ub_np = wind_ub_np[np.where(np.in1d(Windl, coverage)==True)[0]]
-    phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
+pv_ub_np = pv_ub_np[np.where(np.in1d(PVl, coverage)==True)[0]]
+wind_ub_np = wind_ub_np[np.where(np.in1d(Windl, coverage)==True)[0]]
+phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
 
 #    Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
-    
-    Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
+
+Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
 
 # Scenario values
-if scenario == 'HVAC':
+if transmissionScenario == 'HVAC':
     factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
 
 ###### DECISION VARIABLE LIST INDEXES ######
@@ -194,7 +213,7 @@ class Solution:
         self.Nodel, self.PVl, self.Interl = (Nodel, PVl, Interl)
         self.Windl = Windl
         self.node = node
-        self.scenario = scenario
+        self.transmissionScenario = transmissionScenario
         self.allowance = allowance
         self.coverage = coverage
         self.TLoss = TLoss
