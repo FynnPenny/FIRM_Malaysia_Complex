@@ -42,12 +42,19 @@ MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',',
 TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
 TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
 
-
 assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
 constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 EHydro, EBio = [constraints[:, x] for x in range(assets.shape[1])] # GWh per year
 CBaseload = np.array([0, 1, 0.26, 0.01, 0, 0.01, 0, 0.01, 0, 0.78, 0, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+# CBaseload = np.array([0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+
+# CBaseloadR = np.array([0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+# CBaseloadF = np.array([0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+# CBaseload  = CBaseloadF + CBaseloadR
+
+# TODO Add in fossil fuel baseload
+
 CPeak = CHydro + CBio - CBaseload # GW
 
 baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
@@ -55,22 +62,25 @@ baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
 ###### CONSTRAINTS ######
 # Energy constraints
 Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
-Biomax = EBio.sum() * pow(10,3) # GWh to MWh per year
+Biomax   = EBio.sum() * pow(10,3) # GWh to MWh per year
 
 # Transmission constraints
-externalImports = 0.05 if node=='APG_Full' else 0
+externalImports = 0.05 if node=='APG_Full' else 0 # Can ignore for Aus
 CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 ###### TRANSMISSION LOSSES ######
 if transmissionScenario=='HVDC':
     # HVDC backbone scenario
     dc_flags = np.array([True,True,True,True,True,True,True,True,True,True,True,True])
+    # dc_flags = np.array([True,True,True,True,True,True,True,True])
     
-elif transmissionScenario=='HVAC':
+elif transmissionScenario=='HVAC': # TODO: Transition to Aus
     # HVAC backbone scenario
     dc_flags = np.array([False,False,False,False,False,False,False,False,True,True,True,True])
+    # dc_flags = np.array([False,False,False,False,False,False,False,False])
     
 TLoss = []
+# TDistances = [100,100,100,100,100,100,100,100] # ['FQ','NQ','NS','NV','AS','SW','TV']]
 TDistances = [135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450] # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
 for i in range(0,len(dc_flags)):
     TLoss.append(TDistances[i]*0.03) if dc_flags[i] else TLoss.append(TDistances[i]*0.07)
