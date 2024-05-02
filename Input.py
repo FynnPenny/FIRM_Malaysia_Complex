@@ -17,6 +17,7 @@ gasScenario = True """
 Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
 PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
 pv_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
+wind_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
 phes_ub_np = np.array([55.] + [1200.] + [368.] + [552.] + [13.] + [1268.] + [2.] + [942.] + [255.] + [2000.] + [0.] + [0.] + [0.])
 Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
 Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
@@ -27,9 +28,9 @@ MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',',
 TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
 TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
 
-assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
+assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
-constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(np.float)
+constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 EHydro, EBio = [constraints[:, x] for x in range(assets.shape[1])] # GWh per year
 CBaseload = np.array([0, 1, 0.26, 0.01, 0, 0.01, 0, 0.01, 0, 0.78, 0, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
 CPeak = CHydro + CBio - CBaseload # GW
@@ -105,6 +106,7 @@ else:
     baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
 
     pv_ub_np = pv_ub_np[np.where(np.in1d(PVl, coverage)==True)[0]]
+    wind_ub_np = wind_ub_np[np.where(np.in1d(Windl, coverage)==True)[0]]
     phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
 
 #    Nodel, PVl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Interl)]
@@ -139,6 +141,7 @@ Gasmax = energy * 2 * pow(10,9) # MWh
 
 ###### DECISION VARIABLE UPPER BOUNDS ######
 pv_ub = [x for x in pv_ub_np]
+wind_ub = [x for x in wind_ub_np]
 phes_ub = [x for x in phes_ub_np]
 battery_ub = [1000.] * (nodes - inters) + inters * [0] if batteryScenario == True else nodes * [0]
 phes_s_ub = [10000.]
@@ -172,7 +175,7 @@ class Solution:
         self.CInter = list(x[bidx+2: iidx]) if node == 'APG_Full' else len(Interl)*[0] #CInter(j), GW
         self.GInter = np.tile(self.CInter, (intervals, 1)) * pow(10,3) # GInter(j, t), GW to MW
 
-        self.CGas = list(x[iidx: ]) # GW
+        self.CGas = list(x[iidx:gidx]) # GW
 
         self.Nodel, self.PVl, self.Interl = (Nodel, PVl, Interl)
         self.Windl = Windl

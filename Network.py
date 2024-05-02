@@ -12,13 +12,13 @@ def Transmission(solution, output=False):
     Windl = solution.Windl
     intervals, nodes = (solution.intervals, solution.nodes)
 
-    MPV, MInter = map(np.zeros, [(nodes, intervals)] * 2)
-    MWind = map(np.zeros, [(nodes, intervals)] * 1)
+    MPV    = np.zeros((nodes,intervals))
+    MInter = np.zeros((nodes,intervals))
+    MWind  = np.zeros((nodes,intervals))
     for i, j in enumerate(Nodel):
         MPV  [i, :] = solution.GPV  [:, np.where(PVl  ==j)[0]].sum(axis=1)
         MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
-        print(np.where(Windl==j)[0])
-        print(MWind)
+
 
         if solution.node=='APG_Full':
             MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)

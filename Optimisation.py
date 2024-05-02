@@ -113,7 +113,7 @@ def F(x):
     GInter = sum(sum(S.GInter)) * resolution / years if len(S.GInter) > 0 else 0
 
     # Levelised cost of electricity calculation
-    cost = factor * np.array([sum(S.CPV), GInter * pow(10,-6), sum(S.CPHP), S.CPHS, sum(S.CBP), S.CBS] + list(CDC) + [sum(S.CPV), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, 0, 0]) # $b p.a.
+    cost = factor * np.array([sum(S.CPV),sum(S.CWind), GInter * pow(10,-6), sum(S.CPHP), S.CPHS, sum(S.CBP), S.CBS] + list(CDC) + [sum(S.CPV), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, 0, 0]) # $b p.a.
     cost = cost.sum()
     loss = np.sum(abs(TDC), axis=0) * TLoss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
@@ -135,8 +135,11 @@ if __name__=='__main__':
 #    lb = [0.]       * pzones + [0.]     * wzones + contingency_ph   + contingency_b     + [0.]      + [0.]     + [0.]    * inters + [0.] * nodes
 #    ub = [10000.]   * pzones + [300]    * wzones + [10000.] * nodes + [10000.] * nodes  + [100000.] + [100000] + [1000.] * inters + [50.] * nodes
 
-    lb = [0.]       * pzones + contingency_ph   + contingency_b                 + [0.]      + [0.]      + [0.]    * inters + ([0.] * (nodes - inters) + inters * [0])
-    ub = pv_ub + phes_ub + battery_ub + phes_s_ub + battery_s_ub + inter_ub + gas_ub
+    # lb = [0.]       * pzones + contingency_ph   + contingency_b                 + [0.]      + [0.]      + [0.]    * inters + ([0.] * (nodes - inters) + inters * [0])
+    # ub = pv_ub + phes_ub + battery_ub + phes_s_ub + battery_s_ub + inter_ub + gas_ub
+
+    lb = [0.] * pzones + [0.] * wzones + contingency_ph  + contingency_b  + [0.]      + [0.]         + [0.] * inters + ([0.] * (nodes - inters) + inters * [0])
+    ub = pv_ub         + wind_ub       + phes_ub         + battery_ub     + phes_s_ub + battery_s_ub + inter_ub      + gas_ub
 
     # start = np.genfromtxt('Results/init.csv', delimiter=',')    
 
