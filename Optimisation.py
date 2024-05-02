@@ -15,7 +15,7 @@ parser.add_argument('-m', default=0.5, type=float, required=False, help='mutatio
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
 parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
-#parser.add_argument('-s', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
+#parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
 parser.add_argument('-t', default='HVAC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')

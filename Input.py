@@ -87,8 +87,8 @@ else:
     factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
-# firstyear, finalyear, timestep = (2020,2029,1) # This does nothing??
-# firstyear, finalyear, timestep = (2012, 2021, 1)
+# firstyear, finalyear, timestep = (2020,2029,1)
+firstyear, finalyear, timestep = (2012, 2021, 1) # Required for the depracated dispatch module 
 
 ###### SCENARIO ADJUSTMENTS #######
 # Node values
