@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose
 ######### DEBUG ##########
 """ transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
@@ -14,44 +14,46 @@ gasScenario = True """
 #########################
 
 ###### NODAL LISTS ######
-# Nodel       = np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
-# PVl         = np.array(['NSW']*7 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*3 + ['SA']*6 + ['TAS']*0 + ['VIC']*1 + ['WA']*1 + ['NT']*1)
-# Windl       = np.array(['NSW']*8 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*2 + ['SA']*8 + ['TAS']*4 + ['VIC']*4 + ['WA']*3 + ['NT']*1)
-# pv_ub_np    = np.array([365. ]*7 + [887. ]*1 + [257. ]*2 + [1071.]*3 + [260.]*6 + [284. ]*0 + [1070.]*1 + [163.]*1 + [103.]*1)
-# wind_ub_np  = np.array([365. ]*8 + [887. ]*1 + [257. ]*2 + [1071.]*2 + [260.]*8 + [284. ]*4 + [1070.]*4 + [163.]*3 + [103.]*1)
-# phes_ub_np  = np.array([55.  ]   + [1200.]   + [368. ]   + [552. ]   + [13. ]   + [1268.]   + [2.   ]   + [942.]   + [255.]+ [0.] + [0.] + [0.]) # why are there three extra nodes???
-# Interl      = np.array([]) No external interconnections for Australia
-# resolution = 1
-
-Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
-PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
-pv_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
-wind_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
-phes_ub_np = np.array([55.] + [1200.] + [368.] + [552.] + [13.] + [1268.] + [2.] + [942.] + [255.] + [2000.] + [0.] + [0.] + [0.])
-Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
-Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
+Nodel       = np.array(['FNQ','NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
+PVl         = np.array(['NSW']*7 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*3 + ['SA' ]*6 + ['TAS']*0 + ['VIC']*1 + ['WA' ]*1 + ['NT' ]*1) # TODO what should these nodes actually be??
+Windl       = np.array(['NSW']*8 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*2 + ['SA' ]*8 + ['TAS']*4 + ['VIC']*4 + ['WA' ]*3 + ['NT' ]*1)
+pv_ub_np    = np.array([50.  ]*7 + [50.  ]*1 + [50.  ]*2 + [50.  ]*3 + [50.  ]*6 + [50.  ]*0 + [50.  ]*1 + [50.  ]*1 + [50.  ]*1)
+wind_ub_np  = np.array([50.  ]*8 + [50.  ]*1 + [50.  ]*2 + [50.  ]*2 + [50.  ]*8 + [50.  ]*4 + [50.  ]*4 + [50.  ]*3 + [50.  ]*1)
+phes_ub_np  = np.array([500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ] + [0.] + [0.] + [0.]) # why are there three extra nodes???
+Interl      = np.array([]) # No external interconnections for Australia
 resolution = 1
+
+# Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
+# PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
+# pv_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
+# wind_ub_np = np.array([365.] + [887., 887.] + [257.] + [1071.] + [260.] + [284., 284.] + [1070.] + [163.] + [103.,103.] + [627., 627., 627.])
+# phes_ub_np = np.array([55.] + [1200.] + [368.] + [552.] + [13.] + [1268.] + [2.] + [942.] + [255.] + [2000.] + [0.] + [0.] + [0.])
+# Windl = np.array(['ME']*1 + ['SB']*1 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*1 + ['JO']*1 + ['KT']*1 + ['KD']*1 + ['SW']*1)
+# Interl = np.array(['TH']*1 + ['IN']*1 + ['PH']*1) if node=='APG_Full' else np.array([]) # Add external interconnections if ASEAN Power Grid scenario
+# resolution = 1
 
 
 ###### DATA IMPORTS ######
-MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
+# MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
+MLoad = np.genfromtxt('Data/Australia/electricity.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
 
 # for i in ['evan', 'erigid', 'earticulated', 'enonfreight', 'ebus', 'emotorcycle', 'erail', 'eair', 'ewater', 'ecooking', 'emanufacturing', 'emining']:
 #     MLoad += np.genfromtxt('Data/Demand{}.csv'.format(i), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel)))
 
-TSPV = np.genfromtxt('Data/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
-TSWind = np.genfromtxt('Data/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
-
-assets = np.genfromtxt('Data/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
+TSPV = np.genfromtxt('Data/Australia/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
+TSWind = np.genfromtxt('Data/Australia/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
+assets = np.genfromtxt('Data/Australia/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
-constraints = np.genfromtxt('Data/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
+constraints = np.genfromtxt('Data/Australia/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 EHydro, EBio = [constraints[:, x] for x in range(assets.shape[1])] # GWh per year
-CBaseload = np.array([0, 1, 0.26, 0.01, 0, 0.01, 0, 0.01, 0, 0.78, 0, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
-# CBaseload = np.array([0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+# CBaseload = np.array([0, 1, 0.26, 0.01, 0, 0.01, 0, 0.01, 0, 0.78, 0, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
 
-# CBaseloadR = np.array([0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
-# CBaseloadF = np.array([0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
-# CBaseload  = CBaseloadF + CBaseloadR
+if verbose > 1: print("Data Loaded")
+
+CBaseloadR = np.array([0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
+# TODO Add in fossil baseload percentages - have left for now
+CBaseloadF = np.array([0, 0, 0, 0, 0, 0,   0, 0]) * 100 / 8760 # 24/7, GW # Run-of-river percentage
+CBaseload  = CBaseloadF + CBaseloadR
 
 # TODO Add in fossil fuel baseload
 
@@ -65,23 +67,24 @@ Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
 Biomax   = EBio.sum() * pow(10,3) # GWh to MWh per year
 
 # Transmission constraints
-externalImports = 0.05 if node=='APG_Full' else 0 # Can ignore for Aus
+#externalImports = 0.05 if node=='APG_Full' else 0 # Can ignore for Aus
+externalImports = 0
 CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 ###### TRANSMISSION LOSSES ######
 if transmissionScenario=='HVDC':
     # HVDC backbone scenario
-    dc_flags = np.array([True,True,True,True,True,True,True,True,True,True,True,True])
-    # dc_flags = np.array([True,True,True,True,True,True,True,True])
+    # dc_flags = np.array([True,True,True,True,True,True,True,True,True,True,True,True]) # Old
+    dc_flags = np.array([True,True,True,True,True,True,True,True]) # Australia
     
 elif transmissionScenario=='HVAC': # TODO: Transition to Aus
     # HVAC backbone scenario
-    dc_flags = np.array([False,False,False,False,False,False,False,False,True,True,True,True])
-    # dc_flags = np.array([False,False,False,False,False,False,False,False])
+    # dc_flags = np.array([False,False,False,False,False,False,False,False,True,True,True,True]) # Old
+    dc_flags = np.array([False,False,False,False,False,False,False]) # Australia
     
 TLoss = []
-# TDistances = [100,100,100,100,100,100,100,100] # ['FQ','NQ','NS','NV','AS','SW','TV']]
-TDistances = [135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450] # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
+TDistances = [50,50,50,50,50,50,50] # ['FQ','NQ','NS','NV','AS','SW','TV']] # TODO integrate transmission distances and losses from openCEM
+# TDistances = [135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450] # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
 for i in range(0,len(dc_flags)):
     TLoss.append(TDistances[i]*0.03) if dc_flags[i] else TLoss.append(TDistances[i]*0.07)
 TLoss = np.array(TLoss)* pow(10, -3)
@@ -91,46 +94,77 @@ efficiencyPH = 0.8
 efficiencyB = 0.9
 
 ###### COST FACTORS ######
-if transmissionScenario=='HVDC':
-    factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
-else:
-    factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
+# if transmissionScenario=='HVDC':
+#     factor = np.genfromtxt('Data/factor.csv', delimiter=',', usecols=1)
+# else:
+#     factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
+
+factor = np.genfromtxt('Data/Australia/factor.csv',delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
-# firstyear, finalyear, timestep = (2020,2029,1)
-firstyear, finalyear, timestep = (2012, 2021, 1) # Required for the depracated dispatch module 
+firstyear, finalyear, timestep = (2020,2029,1)
+if leapYearData:
+    leaps = np.array((np.arange(firstyear,finalyear+1,timestep) % 4) == 0)
+else:
+    leaps = np.zeros_like(np.arange(firstyear,finalyear+1,timestep)).astype(bool)
+
+def yearfunc(data,npfunc): # applies a function 
+    i = 0
+    j = 0
+    maxs = np.zeros(len(leaps)).astype(float)
+    n = int(365 * 24 / resolution)
+    n_leap = int(366 * 24 / resolution)
+
+    for leap in leaps:
+        if leap:
+            maxs[j] = npfunc(data[i:i+n_leap])
+            i += n_leap
+            j += 1
+        else:
+            maxs[j] = npfunc(data[i:i+n])
+            i += n
+            j += 1
+
+    return maxs
+
+# firstyear, finalyear, timestep = (2012, 2021, 1) # Required for the depracated dispatch module 
 
 ###### SCENARIO ADJUSTMENTS #######
 # Node values
-if 'APG_Full' == node:
-    coverage = Nodel
+# if 'APG_Full' == node:
+#     coverage = Nodel
 
-elif 0: # TODO: Changes need to be made for aus scenarios
-    if node<=17: 
-        coverage = Nodel[node % 10]
+# TODO: Changes need to be made for aus scenarios
+if node<=17: 
+    coverage = Nodel[node % 10]
 
-    if 20 < node <=29 : # TODO Add scenario descriptions
-        coverage = [np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC']), # description1
-            np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
-            np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
-            np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
-            np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC']),
-            np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
-            np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
-            np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])][node % 10 - 1]
-    
-    if node >= 30:
-        coverage = np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
+elif 20 < node <=29 : # TODO Add scenario descriptions
+    coverage = [np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC']), # description1
+        np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
+        np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
+        np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
+        np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC']),
+        np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
+        np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
+        np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])][node % 10 - 1]
+
+elif node >= 30:
+    coverage = np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
 
 else:
-    if 'APG_PMY_Only' == node:
-        coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SE', 'TE'])
-    elif 'APG_BMY_Only' == node:
-        coverage = np.array(['SB', 'SW'])
-    elif 'APG_MY_Isolated' == node:
-        coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
-    else:
-        coverage = np.array([node])
+    coverage = np.array([node])
+
+if verbose > 1: print(coverage)
+
+# else:
+#     if 'APG_PMY_Only' == node:
+#         coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SE', 'TE'])
+#     elif 'APG_BMY_Only' == node:
+#         coverage = np.array(['SB', 'SW'])
+#     elif 'APG_MY_Isolated' == node:
+#         coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
+    # else:
+    #     coverage = np.array([node])
 
 MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
 TSPV = TSPV[:, np.where(np.in1d(PVl, coverage)==True)[0]]
@@ -157,8 +191,9 @@ phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
 Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
 
 # Scenario values
-if transmissionScenario == 'HVAC':
-    factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
+# if transmissionScenario == 'HVAC':
+#     factor = np.genfromtxt('Data/factor_hvac.csv', delimiter=',', usecols=1)
+factor = np.genfromtxt('Data/Australia/factor.csv', delimiter=',', usecols=1)
 
 ###### DECISION VARIABLE LIST INDEXES ######
 intervals, nodes = MLoad.shape
@@ -175,9 +210,11 @@ gidx = iidx + nodes # Index of hydrogen (service areas)
 energy = (MLoad).sum() * pow(10, -9) * resolution / years # PWh p.a.
 contingency_ph = list(0.25 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 contingency_b = list(0.1 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
-#manage = 0 # weeks
-#allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiencyPH # MWh
-allowance = min(0.00002*np.reshape(MLoad.sum(axis=1), (-1, 8760)).sum(axis=-1)) # Allowable annual deficit of 0.002%, MWh
+# manage = 0 # weeks TODO What is this for?? What are these things supposed to be doing??
+# allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiencyPH # MWh
+# TODO This code does not work properly
+# allowance = min(0.00002*np.reshape(MLoad.sum(axis=1), (-1, 8760)).sum(axis=-1)) # Allowable annual deficit of 0.002%, MWh 
+allowance = 0.00002*yearfunc(MLoad,np.max) # Allowable annual deficit of 0.002%, MWh 
 
 GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
 Gasmax = energy * 2 * pow(10,9) # MWh
@@ -189,7 +226,7 @@ phes_ub = [x for x in phes_ub_np]
 battery_ub = [1000.] * (nodes - inters) + inters * [0] if batteryScenario == True else nodes * [0]
 phes_s_ub = [10000.]
 battery_s_ub = [10000.] if batteryScenario == True else [0]
-inter_ub = [500.] * inters if node == 'APG_Full' else inters * [0]
+inter_ub = [500.] * inters if node == 'APG_Full' else inters * [0] # Ignored for Aus
 gas_ub = [50.] * (nodes - inters) + inters * [0] if gasScenario == True else nodes * [0]
 
 class Solution:

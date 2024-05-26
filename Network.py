@@ -19,8 +19,8 @@ def Transmission(solution, output=False):
         MPV  [i, :] = solution.GPV  [:, np.where(PVl  ==j)[0]].sum(axis=1)
         MWind[i, :] = solution.GWind[:, np.where(Windl==j)[0]].sum(axis=1)
 
-        if solution.node=='APG_Full':
-            MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)
+        # if solution.node=='APG_Full':
+        #     MInter[i, :] = solution.GInter[:, np.where(Interl==j)[0]].sum(axis=1)
 
     MPV, MInter = (MPV.transpose(), MInter.transpose()) # Sij-GPV(t, i), Sij-GWind(t, i), MW
     MWind = MWind.transpose()
@@ -65,47 +65,47 @@ def Transmission(solution, output=False):
               - MPV - MInter - MHydro - MBio - MGas - MDischargePH - MDischargeB - MDeficit # - MWind; EIM(t, j), MW
     
     coverage = solution.coverage
-    if len(coverage) > 1:
-        # Imports into external nodes
-        THKD = -1 * MImport[:, np.where(Nodel=='TH')[0][0]] if 'TH' in coverage else np.zeros(intervals)
-        PHSB = -1 * MImport[:, np.where(Nodel=='PH')[0][0]] if 'PH' in coverage else np.zeros(intervals)
-        INSE = MImport[:, np.where(Nodel=='IN')[0][0]] if 'IN' in coverage else np.zeros(intervals)
+    # if len(coverage) > 1:
+    #     # Imports into external nodes
+    #     THKD = -1 * MImport[:, np.where(Nodel=='TH')[0][0]] if 'TH' in coverage else np.zeros(intervals)
+    #     PHSB = -1 * MImport[:, np.where(Nodel=='PH')[0][0]] if 'PH' in coverage else np.zeros(intervals)
+    #     INSE = MImport[:, np.where(Nodel=='IN')[0][0]] if 'IN' in coverage else np.zeros(intervals)
 
-        # Imports into outer internal nodes
-        KTTE = -1 * MImport[:, np.where(Nodel=='KT')[0][0]] if 'KT' in coverage else np.zeros(intervals)
+    #     # Imports into outer internal nodes
+    #     KTTE = -1 * MImport[:, np.where(Nodel=='KT')[0][0]] if 'KT' in coverage else np.zeros(intervals)
 
-        # Imports into inner internal nodes
-        KDPE = MImport[:, np.where(Nodel=='KD')[0][0]] - THKD if 'KD' in coverage else np.zeros(intervals)
-        SBSW = MImport[:, np.where(Nodel=='SB')[0][0]] - PHSB if 'SB' in coverage else np.zeros(intervals)
-        TEPA = MImport[:, np.where(Nodel=='TE')[0][0]] - KTTE if 'TE' in coverage else np.zeros(intervals)
+    #     # Imports into inner internal nodes
+    #     KDPE = MImport[:, np.where(Nodel=='KD')[0][0]] - THKD if 'KD' in coverage else np.zeros(intervals)
+    #     SBSW = MImport[:, np.where(Nodel=='SB')[0][0]] - PHSB if 'SB' in coverage else np.zeros(intervals)
+    #     TEPA = MImport[:, np.where(Nodel=='TE')[0][0]] - KTTE if 'TE' in coverage else np.zeros(intervals)
 
-        JOSW = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - SBSW if 'SW' in coverage else np.zeros(intervals)
-        PASE = -1 * MImport[:, np.where(Nodel=='PA')[0][0]] - TEPA if 'PA' in coverage else np.zeros(intervals)
-        PESE = -1 * MImport[:, np.where(Nodel=='PE')[0][0]] - KDPE if 'PE' in coverage else np.zeros(intervals)
+    #     JOSW = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - SBSW if 'SW' in coverage else np.zeros(intervals)
+    #     PASE = -1 * MImport[:, np.where(Nodel=='PA')[0][0]] - TEPA if 'PA' in coverage else np.zeros(intervals)
+    #     PESE = -1 * MImport[:, np.where(Nodel=='PE')[0][0]] - KDPE if 'PE' in coverage else np.zeros(intervals)
         
-        MEJO = MImport[:, np.where(Nodel=='JO')[0][0]] - JOSW if 'JO' in coverage else np.zeros(intervals)
-        SEME = -1 * MImport[:, np.where(Nodel=='ME')[0][0]] - MEJO if 'ME' in coverage else np.zeros(intervals)
+    #     MEJO = MImport[:, np.where(Nodel=='JO')[0][0]] - JOSW if 'JO' in coverage else np.zeros(intervals)
+    #     SEME = -1 * MImport[:, np.where(Nodel=='ME')[0][0]] - MEJO if 'ME' in coverage else np.zeros(intervals)
 
-        # Check the final node
-        SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE if 'SE' in coverage else np.zeros(intervals)
-        SBSW1 = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - JOSW if 'SW' in coverage else np.zeros(intervals)
+    #     # Check the final node
+    #     SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE if 'SE' in coverage else np.zeros(intervals)
+    #     SBSW1 = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - JOSW if 'SW' in coverage else np.zeros(intervals)
 
-        assert abs(SEME - SEME1).max() <= 0.1, print('SEME Error', abs(SEME - SEME1).max())
-        assert abs(SBSW - SBSW1).max() <= 0.1, print('SBSW Error', abs(SBSW - SBSW1).max())
+    #     assert abs(SEME - SEME1).max() <= 0.1, print('SEME Error', abs(SEME - SEME1).max())
+    #     assert abs(SBSW - SBSW1).max() <= 0.1, print('SBSW Error', abs(SBSW - SBSW1).max())
 
-        TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW   
+    #     TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW   
     
-    elif 0:
+    if np.size(coverage) > 1:
         FQ = -1 * MImport[:, np.where(Nodel=='FNQ')[0][0]] if 'FNQ' in Nodel else np.zeros(intervals)
         AS = -1 * MImport[:, np.where(Nodel=='NT' )[0][0]] if 'NT'  in Nodel else np.zeros(intervals)
         SW =      MImport[:, np.where(Nodel=='WA' )[0][0]] if 'WA'  in Nodel else np.zeros(intervals)
-        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]]
+        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]] if 'TAS'  in Nodel else np.zeros(intervals)
 
-        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ
-        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV
+        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ if 'NQ'  in Nodel else np.zeros(intervals)
+        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV if 'NV'  in Nodel else np.zeros(intervals)
 
-        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV
-        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW
+        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV if 'NS'  in Nodel else np.zeros(intervals)
+        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW if 'NS'  in Nodel else np.zeros(intervals)
         assert abs(NS - NS1).max()<=0.1, print(abs(NS - NS1).max())
 
         TDC = np.array([FQ, NQ, NS, NV, AS, SW, TV]).transpose() # TDC(t, k), MW
