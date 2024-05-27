@@ -73,7 +73,8 @@ def save(h,b,g,suffix):
     np.savetxt('Results/Dispatch_Gas' + suffix, g, fmt='%f', delimiter=',', newline='\n', header='Gas')
     
 def maxx(x):
-    return np.reshape(x, (-1, 8760)).sum(axis=-1).max()/1e6
+    # return np.reshape(x, (-1, 8760)).sum(axis=-1).max()/1e6
+    return yearfunc(x,np.sum).max() / 1e6
 
 def mean(x):
     return x.sum()/years/1e6
@@ -85,15 +86,18 @@ def Analysis(optimisation_x,suffix):
     S = Solution(optimisation_x)
     
     Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, hydro=baseload, bio=np.zeros(intervals), gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
-    Max_deficit1 = np.reshape(Deficit1, (-1, 8760)).sum(axis=-1) # MWh per year
+    # Max_deficit1 = np.reshape(Deficit1, (-1, 8760)).sum(axis=-1) # MWh per year
+    Max_deficit1 = yearfunc(Deficit1,np.sum) # MWh per year
     PFlexible_Gas = Deficit_power1.max() * pow(10, -3) # GW
     
     Deficit_energy2, Deficit_power2, Deficit2, DischargePH2, DischargeB2 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10, 3), bio=np.zeros(intervals), gas=np.zeros(intervals))
-    Max_deficit2 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
+    # Max_deficit2 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
+    Max_deficit2 = yearfunc(Deficit2,np.sum) # MWh per year
     PBio_Gas = Deficit_power2.max() * pow(10, -3) # GW
 
     Deficit_energy3, Deficit_power3, Deficit3, DischargePH3, DischargeB3 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10, 3), bio=np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
-    Max_deficit3 = np.reshape(Deficit3, (-1, 8760)).sum(axis=-1) # MWh per year
+    # Max_deficit3 = np.reshape(Deficit3, (-1, 8760)).sum(axis=-1) # MWh per year
+    Max_deficit3 = yearfunc(Deficit3,np.sum) # MWh per year
     PGas = Deficit_power3.max() * pow(10, -3) # GW
     
     GHydro = (Max_deficit1 - Max_deficit2).max() / 0.8
@@ -127,7 +131,7 @@ def Analysis(optimisation_x,suffix):
         print("Hydro generation:", maxx(h))
         print("Remaining deficit:", Deficit.sum()/1e6)
         step = 1
-        while Deficit.sum() > allowance*years and step < 50:
+        while np.all(yearfunc(Deficit,np.sum) > allowance) and step < 50:
             h,b,g = fill_deficit(Deficit,h,b,g,hlimit,blimit,sum(S.CGas)*1e3,Hydromax,Biomax,Gasmax,True,False,False,0.8,168)
             Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=h, bio=b, gas=g)
             step += 1
@@ -226,8 +230,9 @@ def Analysis(optimisation_x,suffix):
     endtime = dt.datetime.now()
     print('Deficit fill took', endtime - starttime)
 
-    from Statistics import Information
-    Information(optimisation_x,h,b,g)
+    # TODO fix statistics module
+    # from Statistics import Information
+    # Information(optimisation_x,h,b,g)
 
     return True
 

@@ -21,7 +21,7 @@ pv_ub_np    = np.array([50.  ]*7 + [50.  ]*1 + [50.  ]*2 + [50.  ]*3 + [50.  ]*6
 wind_ub_np  = np.array([50.  ]*8 + [50.  ]*1 + [50.  ]*2 + [50.  ]*2 + [50.  ]*8 + [50.  ]*4 + [50.  ]*4 + [50.  ]*3 + [50.  ]*1)
 phes_ub_np  = np.array([500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ] + [0.] + [0.] + [0.]) # why are there three extra nodes???
 Interl      = np.array([]) # No external interconnections for Australia
-resolution = 1
+resolution = 0.5
 
 # Nodel = np.array(['ME', 'SB', 'TE', 'PA', 'SE', 'PE', 'JO', 'KT', 'KD', 'SW', 'TH', 'IN', 'PH'])
 # PVl =   np.array(['ME']*1 + ['SB']*2 + ['TE']*1 + ['PA']*1 + ['SE']*1 + ['PE']*2 + ['JO']*1 + ['KT']*1 + ['KD']*2 + ['SW']*3)
@@ -111,21 +111,21 @@ else:
 def yearfunc(data,npfunc): # applies a function 
     i = 0
     j = 0
-    maxs = np.zeros(len(leaps)).astype(float)
+    outs = np.zeros(len(leaps)).astype(float)
     n = int(365 * 24 / resolution)
     n_leap = int(366 * 24 / resolution)
 
     for leap in leaps:
         if leap:
-            maxs[j] = npfunc(data[i:i+n_leap])
+            outs[j] = npfunc(data[i:i+n_leap])
             i += n_leap
             j += 1
         else:
-            maxs[j] = npfunc(data[i:i+n])
+            outs[j] = npfunc(data[i:i+n])
             i += n
             j += 1
 
-    return maxs
+    return outs
 
 # firstyear, finalyear, timestep = (2012, 2021, 1) # Required for the depracated dispatch module 
 

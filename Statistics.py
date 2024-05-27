@@ -15,7 +15,7 @@ def Debug(solution):
     """Debugging"""
 
     Load, PV, Inter = (solution.MLoad.sum(axis=1), solution.GPV.sum(axis=1), solution.GInter.sum(axis=1))
-#    Wind = solution.GWind.sum(axis=1)
+    Wind = solution.GWind.sum(axis=1)
     Hydro, Bio, Gas = (solution.MHydro.sum(axis=1), solution.MBio.sum(axis=1), solution.MGas.sum(axis=1))
 
     DischargePH, ChargePH, StoragePH = (solution.DischargePH, solution.ChargePH, solution.StoragePH)
@@ -27,10 +27,12 @@ def Debug(solution):
 
     for i in range(intervals):
         # Energy supply-demand balance
-#        assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-#                   - PV[i] - Inter[i] - Wind[i] - Baseload[i] - Peak[i] - DischargePH[i] + DischargeB[i] - Deficit[i]) <= 1
+        # assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
+        #            - PV[i] - Inter[i] - Wind[i] - Baseload[i] - Peak[i] - DischargePH[i] + DischargeB[i] - Deficit[i]) <= 1
+        # assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
+        #            - PV[i] - Inter[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
         assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-                   - PV[i] - Inter[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
+                - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
 
         # Discharge, Charge and Storage
         if i==0:
@@ -43,7 +45,7 @@ def Debug(solution):
         # Capacity: PV, wind, Discharge, Charge and Storage
         try:
             assert np.amax(PV) <= sum(solution.CPV) * pow(10, 3), print(np.amax(PV) - sum(solution.CPV) * pow(10, 3))
-#            assert np.amax(Wind) <= sum(solution.CWind) * pow(10, 3), print(np.amax(Wind) - sum(solution.CWind) * pow(10, 3))
+            assert np.amax(Wind) <= sum(solution.CWind) * pow(10, 3), print(np.amax(Wind) - sum(solution.CWind) * pow(10, 3))
             assert np.amax(Inter) <= sum(solution.CInter) * pow(10,3)
             assert np.amax(Gas) <= sum(solution.CGas) * pow(10,3)
 
@@ -83,7 +85,8 @@ def LPGM(solution):
 
     np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_Network.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), C, fmt='%s', delimiter=',', header=header, comments='')
 
-    if 'APG' in node:
+    # if 'APG' in node:
+    if node > 17:
         header = 'Date & time,Operational demand,Hydrogen (MW),' \
                  'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
                  'Transmission,PHES-Charge (MW),Battery-Charge (MW),' \
@@ -100,7 +103,7 @@ def LPGM(solution):
             C = np.around(C.transpose())
 
             C = np.insert(C.astype('str'), 0, datentime, axis=1)
-            np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario, solution.Nodel[j]), C, fmt='%s', delimiter=',', header=header, comments='')
+            np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario, solution.Nodel[j]), C, fmt='%s', delimiter=',', header=header, comments='')
 
     print('Load profiles and generation mix is produced.')
 
@@ -109,29 +112,31 @@ def LPGM(solution):
 def GGTA(solution):
     """GW, GWh, TWh p.a. and A$/MWh information"""
     # Import cost factors
-    if scenario == 'HVDC':
-        factor = np.genfromtxt('Data/factor.csv', dtype=None, delimiter=',', encoding=None)
-    elif scenario == 'HVAC':
-        factor = np.genfromtxt('Data/factor_hvac.csv', dtype=None, delimiter=',', encoding=None)
+    # if transmissionScenario == 'HVDC':
+    #     factor = np.genfromtxt('Data/factor.csv', dtype=None, delimiter=',', encoding=None)
+    # elif transmissionScenario == 'HVAC':
+    #     factor = np.genfromtxt('Data/factor_hvac.csv', dtype=None, delimiter=',', encoding=None)
+
+    factor = np.genfromtxt('Data/Australia/factor.csv', dtype=None, delimiter=',', encoding=None)
         
     factor = dict(factor)
 
     # Import capacities [GW, GWh] from the least-cost solution
     CPV, CInter, CPHP, CBP, CPHS, CBS = (sum(solution.CPV), sum(solution.CInter), sum(solution.CPHP), sum(solution.CBP), solution.CPHS, solution.CBS) # GW, GWh
-#    CWind = sum(solution.CWind)
+    CWind = sum(solution.CWind)
     CapHydro, CapBio = CHydro.sum(), CBio.sum() # GW
     CapGas = (solution.MGas.sum(axis=1)).max() * pow(10,-3) # GW
 
     # Import generation energy [GWh] from the least-cost solution
     GPV, GHydro, GGas, GInter, GBio = map(lambda x: x * pow(10, -6) * resolution / years, (solution.GPV.sum(), solution.MHydro.sum(), solution.MGas.sum(), solution.MInter.sum(), solution.MBio.sum())) # TWh p.a.
     DischargePH, DischargeB = (solution.DischargePH.sum(), solution.DischargeB.sum())
-#    GWind = solution.GWind.sum()
+    GWind = solution.GWind.sum()
     CFPV = GPV / CPV / 8.76
-#    CFWind = GWind / CWind / 8.76
+    CFWind = GWind / CWind / 8.76
     
     # Calculate the annual costs for each technology
     CostPV = factor['PV'] * CPV # A$b p.a.
-#    CostWind = factor['Wind'] * CWind # A$b p.a.
+    CostWind = factor['Wind'] * CWind # A$b p.a.
     CostHydro = factor['Hydro'] * GHydro # A$b p.a.
     CostBio = factor['Bio'] * GBio # A$b p.a.
     CostGas = factor['GasCap'] * CapGas + factor['GasFuel'] * GGas # A$b p.a.
@@ -141,7 +146,9 @@ def GGTA(solution):
 #    if scenario>=21:
 #        CostPH -= factor['LegPH']
 
-    CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
+    # CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
+    # TODO make sure these are correct
+    CostT = np.array([factor['FQ']],[factor['NQ']],[factor['NS']],[factor['NV']],[factor['AS']],[factor['SW']],[factor['TV']])
     CostDC, CostAC, CDC, CAC = [],[],[],[]
 
     for i in range(0,len(CostT)):
@@ -155,7 +162,7 @@ def GGTA(solution):
 #    if scenario>=21:
 #        CostDC -= factor['LegINTC']
 
-    CostAC += factor['ACPV'] * CPV # + factor['ACWind'] * CWind # A$b p.a.
+    CostAC += factor['ACPV'] * CPV + factor['ACWind'] * CWind # A$b p.a.
     
     # Calculate the average annual energy demand
     Energy = (MLoad).sum() * pow(10, -9) * resolution / years # PWh p.a.
@@ -165,7 +172,7 @@ def GGTA(solution):
     # Calculate the levelised cost of elcetricity at a network level
     LCOE = (CostPV + CostInter + CostBattery + CostGas + CostHydro + CostBio + CostPH + CostDC + CostAC) / (Energy - Loss) # + CostWind / (Energy - Loss)
     LCOEPV = CostPV / (Energy - Loss)
-#    LCOEWind = CostWind / (Energy - Loss)
+    LCOEWind = CostWind / (Energy - Loss)
     LCOEInter = CostInter / (Energy - Loss)
     LCOEHydro = CostHydro / (Energy - Loss)
     LCOEBio = CostBio / (Energy - Loss)
@@ -177,9 +184,10 @@ def GGTA(solution):
     
     # Calculate the levelised cost of generation
 #    LCOG = (CostPV + CostWind + CostHydro + CostBio) * pow(10, 3) / (GPV + GWind + GHydro + GBio)
-    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro + GBio + GGas + GInter)
+#    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro + GBio + GGas + GInter)
+    LCOG = (CostPV + CostWind + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GWind + GHydro + GBio + GGas + GInter)
     LCOGP = CostPV * pow(10, 3) / GPV if GPV!=0 else 0
-#    LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
+    LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
     LCOGH = CostHydro * pow(10, 3) / GHydro if GHydro!=0 else 0
     LCOGB = CostBio * pow(10, 3) / GBio if GBio!=0 else 0
     LCOGG = CostGas * pow(10, 3) / GGas if GGas != 0 else 0
@@ -197,7 +205,7 @@ def GGTA(solution):
     print('\u2022 LCOG:', LCOG)
     print('\u2022 LCOB:', LCOB)
     print('\u2022 LCOG-PV:', LCOGP, '(%s)' % CFPV)
-#    print('\u2022 LCOG-Wind:', LCOGW, '(%s)' % CFWind)
+    print('\u2022 LCOG-Wind:', LCOGW, '(%s)' % CFWind)
     print('\u2022 LCOG-Hydro:', LCOGH)
     print('\u2022 LCOG-Bio:', LCOGB)
     print('\u2022 LCOG-External_Imports:', LCOGI)
@@ -210,16 +218,18 @@ def GGTA(solution):
     size = 28 + len(list(solution.CDC))
     D = np.zeros((1, size))
     header = 'Annual demand (PWh),Annual Energy Losses (PWh),' \
-             'PV Capacity (GW),PV Avg Annual Gen (GWh),Hydro Capacity (GW),Hydro Avg Annual Gen (GWh),Bio Capacity (GW),Bio Avg Annual Gen (GWh),Gas Capacity (GW),Gas Avg Annual Gen (GWh),Inter Capacity (GW),Inter Avg Annual Gen (GWh),' \
-             'PHES-PowerCap (GW),Battery-PowerCap (GW),PHES-EnergyCap (GWh),Battery-EnergyCap (GWh),' \
-             'KDPE,TEPA,SEME,MEJO,PESE,SBSW,KTTE,PASE,JOSW,THKD,INSE,PHSB,' \
-             'LCOE,LCOG,LCOB,LCOG_PV, LCOG_Hydro,LCOG_Bio,LCOG_Gas,LCOG_Inter,LCOBS_PHES,LCOBS_Battery,LCOBT, LCOBL'
-    D[0, :] = [Energy * pow(10, 3), Loss * pow(10, 3), CPV, GPV, CapHydro, GHydro, CapBio, GBio, CapGas, GGas, CInter, GInter] \
+                'PV Capacity (GW),PV Avg Annual Gen (GWh),Wind Capacity (GW),Wind Avg Annual Gen (GWh),' \
+                'Hydro Capacity (GW),Hydro Avg Annual Gen (GWh),Bio Capacity (GW),Bio Avg Annual Gen (GWh),'\
+                'Gas Capacity (GW),Gas Avg Annual Gen (GWh),Inter Capacity (GW),Inter Avg Annual Gen (GWh),' \
+                'PHES-PowerCap (GW),Battery-PowerCap (GW),PHES-EnergyCap (GWh),Battery-EnergyCap (GWh),' \
+                'FQ','NQ','NS','NV','AS','SW','TV' \
+                'LCOE,LCOG,LCOB,LCOG_PV,LCOG_Wind,LCOG_Hydro,LCOG_Bio,LCOG_Gas,LCOG_Inter,LCOBS_PHES,LCOBS_Battery,LCOBT, LCOBL'
+    D[0, :] = [Energy * pow(10, 3), Loss * pow(10, 3), CPV, GPV, CWind, GWind, CWind, GWind, CapHydro, GHydro, CapBio, GBio, CapGas, GGas, CInter, GInter] \
               + [CPHP, CBP, CPHS, CBS] \
               + list(solution.CDC) \
-              + [LCOE, LCOG, LCOB, LCOGP, LCOGH, LCOGB, LCOGG, LCOGI, LCOBS_P, LCOBS_B, LCOBT, LCOBL] # + [CWind, GWind, LCOGW]
+              + [LCOE, LCOG, LCOB, LCOGP, LCOGW, LCOGH, LCOGB, LCOGG, LCOGI, LCOBS_P, LCOBS_B, LCOBT, LCOBL]
 
-    np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), D, header=header, fmt='%f', delimiter=',')
+    np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), D, header=header, fmt='%f', delimiter=',')
     print('Energy generation, storage and transmission information is produced.')
 
     return True
@@ -238,14 +248,20 @@ def Information(x, hydro , bio, gas):
     except AssertionError:
         pass
     
-    assert np.reshape(hydro, (-1, 8760)).sum(axis=-1).max() <= Hydromax, f"Hydro generation exceeds requirement {np.reshape(hydro, (-1, 8760)).sum(axis=-1).max()} {Hydromax}"
-    assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, f"Bio generation exceeds requirement {np.reshape(bio, (-1, 8760)).sum(axis=-1).max()} {Biomax}"
-    assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, f"Gas generation exceeds requirement {np.reshape(gas, (-1, 8760)).sum(axis=-1).max()} {Gasmax}"
+    # assert np.reshape(hydro, (-1, 8760)).sum(axis=-1).max() <= Hydromax, f"Hydro generation exceeds requirement {np.reshape(hydro, (-1, 8760)).sum(axis=-1).max()} {Hydromax}"
+    # assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, f"Bio generation exceeds requirement {np.reshape(bio, (-1, 8760)).sum(axis=-1).max()} {Biomax}"
+    # assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, f"Gas generation exceeds requirement {np.reshape(gas, (-1, 8760)).sum(axis=-1).max()} {Gasmax}"
+
+    assert yearfunc(hydro,np.sum).max() <= Hydromax, f"Hydro generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Hydromax}"
+    assert yearfunc(bio, np.sum).max() <= Biomax, f"Bio generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Biomax}"
+    assert yearfunc(gas, np.sum).max() <= Gasmax, f"Gas generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Gasmax}"
+
 
     #S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
     S.TDC = Transmission(S, output=True)
     S.CDC = np.amax(abs(S.TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
-    S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
+    # S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
+    S.FQ, S.NQ, S.NS, S.NV, S.AS, S.SW, S.TV = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
 
     CGas = np.nan_to_num(np.array(S.CGas))
 
@@ -269,20 +285,23 @@ def Information(x, hydro , bio, gas):
     S.MPHS = S.CPHS * np.array(S.CPHP) * pow(10, 3) / sum(S.CPHP) # GW to MW
     S.MBS = S.CBS * np.array(S.CBP) * pow(10, 3) / sum(S.CBP) # GW to MW
 
-    # S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB
-    S.Topology = np.array([-1 * (S.SEME + S.MEJO),      # ME
-                  S.PHSB + S.SBSW,                      # SB
-                  S.KTTE + S.TEPA,                      # TE
-                  -1 * (S.TEPA + S.KTTE),               # PA
-                  S.PESE + S.PASE + S.SEME - S.INSE,    # SE
-                  -1 * (S.KDPE + S.PESE),               # PE
-                  S.JOSW + S.MEJO,                      # JO
-                  -1 * S.KTTE,                          # KT
-                  S.THKD + S.KDPE,                      # KD
-                  -1 * (S.JOSW + S.SBSW),               # SW
-                  -1 * S.THKD,                          # TH
-                  S.INSE,                               # IN
-                  -1 * S.PHSB])                         # PH
+    # # S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB
+    # S.Topology = np.array([-1 * (S.SEME + S.MEJO),      # ME
+    #               S.PHSB + S.SBSW,                      # SB
+    #               S.KTTE + S.TEPA,                      # TE
+    #               -1 * (S.TEPA + S.KTTE),               # PA
+    #               S.PESE + S.PASE + S.SEME - S.INSE,    # SE
+    #               -1 * (S.KDPE + S.PESE),               # PE
+    #               S.JOSW + S.MEJO,                      # JO
+    #               -1 * S.KTTE,                          # KT
+    #               S.THKD + S.KDPE,                      # KD
+    #               -1 * (S.JOSW + S.SBSW),               # SW
+    #               -1 * S.THKD,                          # TH
+    #               S.INSE,                               # IN
+    #               -1 * S.PHSB])                         # PH
+
+    # S.FQ, S.NQ, S.NS, S.NV, S.AS, S.SW, S.TV
+    S.Topology = np.array([]) # TODO Figure out topology
 
     LPGM(S)
     GGTA(S)
@@ -293,7 +312,8 @@ def Information(x, hydro , bio, gas):
     return True
 
 if __name__ == '__main__':
-    suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"
+    # suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"
+    suffix = "Aus_Testing_1_HVAC"
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
     hydro = np.genfromtxt('Results/Dispatch_Hydro{}'.format(suffix), delimiter=',', skip_header=1)
     bio = np.genfromtxt('Results/Dispatch_Bio{}'.format(suffix), delimiter=',', skip_header=1)
