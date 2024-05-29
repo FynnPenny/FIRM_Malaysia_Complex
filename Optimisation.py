@@ -180,7 +180,7 @@ if __name__=='__main__':
                                     maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
                                     disp=True, polish=False, updating='deferred', workers=14) ###### CHANGE WORKERS BACK TO -1
 
-    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), 'w', newline="") as csvfile:
+    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,args.i), 'w', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
@@ -188,4 +188,4 @@ if __name__=='__main__':
     print("Optimisation took", endtime - starttime)
 
     from Fill import Analysis
-    Analysis(result.x,'_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario))
+    Analysis(result.x,'_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,args.i))
