@@ -71,7 +71,7 @@ def LPGM(solution):
                   solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), #solution.GWind.sum(axis=1),
                   solution.DischargePH, solution.DischargeB, solution.Deficit, -1 * solution.Spillage, -1 * solution.ChargePH, -1 * solution.ChargeB,
                   solution.StoragePH, solution.StorageB,
-                  solution.KDPE, solution.TEPA, solution.SEME, solution.MEJO, solution.PESE, solution.SBSW, solution.KTTE, solution.PASE, solution.JOSW, solution.THKD, solution.INSE, solution.PHSB])
+                  solution.FQ, solution.NQ, solution.NS, solution.NV, solution.AS, solution.SW, solution.TV])
     
     C = np.around(C.transpose())
 
@@ -81,9 +81,9 @@ def LPGM(solution):
     header = 'Date & time,Operational demand,Hydrogen (MW),' \
              'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),PHES-Charge (MW),Battery-Charge (MW),' \
              'PHES-Storage (MWh),Battery-Storage (MWh),' \
-             'KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB'
+             'FQ, NQ, NS, NV, AS, SW, TV'
 
-    np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_Network.csv'.format(node,scenario,percapita,batteryScenario,gasScenario), C, fmt='%s', delimiter=',', header=header, comments='')
+    np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_Network.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), C, fmt='%s', delimiter=',', header=header, comments='')
 
     # if 'APG' in node:
     if node > 17:
@@ -148,7 +148,7 @@ def GGTA(solution):
 
     # CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
     # TODO make sure these are correct
-    CostT = np.array([factor['FQ']],[factor['NQ']],[factor['NS']],[factor['NV']],[factor['AS']],[factor['SW']],[factor['TV']])
+    CostT = np.array([factor['FQ'],factor['NQ'],factor['NS'],factor['NV'],factor['AS'],factor['SW'],factor['TV']])
     CostDC, CostAC, CDC, CAC = [],[],[],[]
 
     for i in range(0,len(CostT)):
@@ -164,6 +164,7 @@ def GGTA(solution):
 
     CostAC += factor['ACPV'] * CPV + factor['ACWind'] * CWind # A$b p.a.
     
+
     # Calculate the average annual energy demand
     Energy = (MLoad).sum() * pow(10, -9) * resolution / years # PWh p.a.
     Loss = np.sum(abs(solution.TDC), axis=0) * TLoss
@@ -215,7 +216,8 @@ def GGTA(solution):
     print('\u2022 LCOB-Transmission:', LCOBT)
     print('\u2022 LCOB-Spillage & loss:', LCOBL)
 
-    size = 28 + len(list(solution.CDC))
+    #size = 28 + len(list(solution.CDC))
+    size = 33 + len(list(solution.CDC))
     D = np.zeros((1, size))
     header = 'Annual demand (PWh),Annual Energy Losses (PWh),' \
                 'PV Capacity (GW),PV Avg Annual Gen (GWh),Wind Capacity (GW),Wind Avg Annual Gen (GWh),' \
@@ -229,7 +231,9 @@ def GGTA(solution):
               + list(solution.CDC) \
               + [LCOE, LCOG, LCOB, LCOGP, LCOGW, LCOGH, LCOGB, LCOGG, LCOGI, LCOBS_P, LCOBS_B, LCOBT, LCOBL]
 
-    np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), D, header=header, fmt='%f', delimiter=',')
+#TODO temporary fix only
+    #np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), D, header=header, fmt='%f', delimiter=',')
+    np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), D, header=None, fmt='%f', delimiter=',')
     print('Energy generation, storage and transmission information is produced.')
 
     return True
@@ -265,9 +269,10 @@ def Information(x, hydro , bio, gas):
 
     CGas = np.nan_to_num(np.array(S.CGas))
 
-    if 'APG' not in node:
+    # if 'APG' not in node:
+    if 0:
         S.MPV = S.GPV
-    #    S.MWind = S.GWind if S.GWind.shape[1]>0 else np.zeros((intervals, 1))
+        S.MWind = S.GWind if S.GWind.shape[1]>0 else np.zeros((intervals, 1))
         S.MInter = S.GInter
         S.MDischargePH = np.tile(S.DischargePH, (nodes, 1)).transpose()
         S.MDischargeB = np.tile(S.DischargeB, (nodes, 1)).transpose()
@@ -301,7 +306,19 @@ def Information(x, hydro , bio, gas):
     #               -1 * S.PHSB])                         # PH
 
     # S.FQ, S.NQ, S.NS, S.NV, S.AS, S.SW, S.TV
-    S.Topology = np.array([]) # TODO Figure out topology
+      #['FNQ','NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
+    S.Topology = np.array([
+                        -1*S.FQ,                        #FNQ
+                        -1*(S.NS + S.NQ + S.NV),        #NSW
+                        -1*S.AS,                        #NT
+                         S.NQ + S.FQ,                   #QLD
+                         S.NS + S.AS - S.SW,            #SA
+                        -1*S.TV,                        #TAS 
+                         S.NV + S.TV,                   #VIC
+                         S.SW                           #WA 
+    ])
+
+    # S.Topology = np.array([]) # TODO Figure out topology
 
     LPGM(S)
     GGTA(S)
