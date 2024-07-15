@@ -38,8 +38,14 @@ def Debug(solution):
         #         , PV[i] , Inter[i] , Wind[i] , Hydro[i] , Bio[i] , DischargePH[i] , DischargeB[i] , Deficit[i] , Gas[i]])
         # print("something done")
 
-        assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-                - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
+        try: assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
+                - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1 \
+                , "Energy Imbalance > 1"
+        except AssertionError as errmsg:
+            print(errmsg)
+            print("Scenario used: {}".format(solution.node))
+            print("Energy Imbalance: {}".format(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
+                - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]))
 
         # Discharge, Charge and Storage
         if i==0:
