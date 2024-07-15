@@ -9,7 +9,6 @@ parser.add_argument('-p', default=5, type=int, required=False, help='popsize=2, 
 parser.add_argument('-m', default=0.5, type=float, required=False, help='mutation=0.5')
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
-# parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
 parser.add_argument('-t', default='HVAC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
@@ -20,6 +19,7 @@ parser.add_argument('-v', default=0, type=int, required=False, help='Verbose=0,1
 args = parser.parse_args()
 
 # scenario = args.s
+maxit = args.i
 transmissionScenario = args.t
 node = args.n
 percapita = args.e
@@ -57,14 +57,14 @@ else:
     print("-l must be True or False")
     exit()
 
-from Input import *
-from Simulation import Reliability
-from Network import Transmission
-
+# from Input import *
+# from Simulation import Reliability
+# from Network import Transmission
 
 if __name__=='__main__':
-    print('Results/Optimisation_resultx_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario))
-    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario),newline="") as csvfile:
+    suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
+    print('Results/Optimisation_resultx{}.csv'.format(suffix))
+    with open('Results/Optimisation_resultx{}.csv'.format(suffix),newline="") as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             old_x = [float(num) for num in row]
@@ -72,4 +72,4 @@ if __name__=='__main__':
     print(old_x)
 
     from Fill import Analysis
-    Analysis(old_x,'_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,args.i))
+    Analysis(old_x,'{}.csv'.format(suffix))

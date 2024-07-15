@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, maxit
 ######### DEBUG ##########
 """ transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
@@ -40,6 +40,7 @@ MLoad = np.genfromtxt('Data/Australia/electricity.csv', delimiter=',', skip_head
 # for i in ['evan', 'erigid', 'earticulated', 'enonfreight', 'ebus', 'emotorcycle', 'erail', 'eair', 'ewater', 'ecooking', 'emanufacturing', 'emining']:
 #     MLoad += np.genfromtxt('Data/Demand{}.csv'.format(i), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel)))
 
+# TODO are the right columns being used here???
 TSPV = np.genfromtxt('Data/Australia/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
 TSWind = np.genfromtxt('Data/Australia/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
 assets = np.genfromtxt('Data/Australia/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)

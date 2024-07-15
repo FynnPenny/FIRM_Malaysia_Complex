@@ -31,6 +31,13 @@ def Debug(solution):
         #            - PV[i] - Inter[i] - Wind[i] - Baseload[i] - Peak[i] - DischargePH[i] + DischargeB[i] - Deficit[i]) <= 1
         # assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
         #            - PV[i] - Inter[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
+        # print("something here")
+        # print(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
+        #         - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i])
+        # print([Load[i] , ChargePH[i] , ChargeB[i] , Spillage[i]
+        #         , PV[i] , Inter[i] , Wind[i] , Hydro[i] , Bio[i] , DischargePH[i] , DischargeB[i] , Deficit[i] , Gas[i]])
+        # print("something done")
+
         assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
                 - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
 
@@ -62,7 +69,7 @@ def Debug(solution):
 
     return True
 
-def LPGM(solution):
+def LPGM(solution,suffix):
     """Load profiles and generation mix data"""
 
     Debug(solution)
@@ -75,7 +82,7 @@ def LPGM(solution):
     
     C = np.around(C.transpose())
 
-    datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%a %-d %b %Y %H:%M') for x in range(intervals)])
+    datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%Y %H:%M') for x in range(intervals)])
     C = np.insert(C.astype('str'), 0, datentime, axis=1)
 
     header = 'Date & time,Operational demand,Hydrogen (MW),' \
@@ -83,7 +90,7 @@ def LPGM(solution):
              'PHES-Storage (MWh),Battery-Storage (MWh),' \
              'FQ, NQ, NS, NV, AS, SW, TV'
 
-    np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_Network.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), C, fmt='%s', delimiter=',', header=header, comments='')
+    np.savetxt('Results/LPGM{}_Network.csv'.format(suffix), C, fmt='%s', delimiter=',', header=header, comments='')
 
     # if 'APG' in node:
     if node > 17:
@@ -103,13 +110,13 @@ def LPGM(solution):
             C = np.around(C.transpose())
 
             C = np.insert(C.astype('str'), 0, datentime, axis=1)
-            np.savetxt('Results/LPGM_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario, solution.Nodel[j]), C, fmt='%s', delimiter=',', header=header, comments='')
+            np.savetxt('Results/LPGM{}_{}.csv'.format(suffix, solution.Nodel[j]), C, fmt='%s', delimiter=',', header=header, comments='')
 
     print('Load profiles and generation mix is produced.')
 
     return True
 
-def GGTA(solution):
+def GGTA(solution, suffix):
     """GW, GWh, TWh p.a. and A$/MWh information"""
     # Import cost factors
     # if transmissionScenario == 'HVDC':
@@ -217,28 +224,28 @@ def GGTA(solution):
     print('\u2022 LCOB-Spillage & loss:', LCOBL)
 
     #size = 28 + len(list(solution.CDC))
-    size = 33 + len(list(solution.CDC))
+    size = 31 + len(list(solution.CDC))
     D = np.zeros((1, size))
-    header = 'Annual demand (PWh),Annual Energy Losses (PWh),' \
-                'PV Capacity (GW),PV Avg Annual Gen (GWh),Wind Capacity (GW),Wind Avg Annual Gen (GWh),' \
-                'Hydro Capacity (GW),Hydro Avg Annual Gen (GWh),Bio Capacity (GW),Bio Avg Annual Gen (GWh),'\
-                'Gas Capacity (GW),Gas Avg Annual Gen (GWh),Inter Capacity (GW),Inter Avg Annual Gen (GWh),' \
-                'PHES-PowerCap (GW),Battery-PowerCap (GW),PHES-EnergyCap (GWh),Battery-EnergyCap (GWh),' \
-                'FQ','NQ','NS','NV','AS','SW','TV' \
-                'LCOE,LCOG,LCOB,LCOG_PV,LCOG_Wind,LCOG_Hydro,LCOG_Bio,LCOG_Gas,LCOG_Inter,LCOBS_PHES,LCOBS_Battery,LCOBT, LCOBL'
-    D[0, :] = [Energy * pow(10, 3), Loss * pow(10, 3), CPV, GPV, CWind, GWind, CWind, GWind, CapHydro, GHydro, CapBio, GBio, CapGas, GGas, CInter, GInter] \
+    header = 'Annual demand (PWh) , Annual Energy Losses (PWh), \
+                PV Capacity (GW) , PV Avg Annual Gen (GWh) , Wind Capacity (GW) , Wind Avg Annual Gen (GWh), \
+                Hydro Capacity (GW) , Hydro Avg Annual Gen (GWh) , Bio Capacity (GW) , Bio Avg Annual Gen (GWh),\
+                Gas Capacity (GW) , Gas Avg Annual Gen (GWh) , Inter Capacity (GW) , Inter Avg Annual Gen (GWh), \
+                PHES-PowerCap (GW) , Battery-PowerCap (GW) , PHES-EnergyCap (GWh) , Battery-EnergyCap (GWh) , \
+                FQ , NQ , NS , NV , AS , SW , TV ,  \
+                LCOE , LCOG , LCOB , LCOG_PV , LCOG_Wind , LCOG_Hydro , LCOG_Bio , LCOG_Gas , LCOG_Inter , LCOBS_PHES , LCOBS_Battery , LCOBT ,  LCOBL'
+    D[0, :] = [Energy * pow(10, 3), Loss * pow(10, 3), CPV, GPV, CWind, GWind, CapHydro, GHydro, CapBio, GBio, CapGas, GGas, CInter, GInter] \
               + [CPHP, CBP, CPHS, CBS] \
               + list(solution.CDC) \
               + [LCOE, LCOG, LCOB, LCOGP, LCOGW, LCOGH, LCOGB, LCOGG, LCOGI, LCOBS_P, LCOBS_B, LCOBT, LCOBL]
 
-#TODO temporary fix only
-    #np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), D, header=header, fmt='%f', delimiter=',')
-    np.savetxt('Results/GGTA_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), D, header=None, fmt='%f', delimiter=',')
+
+    #header = header.replace('\n', ',')
+    np.savetxt('Results/GGTA{}.csv'.format(suffix), D, header=header, fmt='%f', delimiter=',')
     print('Energy generation, storage and transmission information is produced.')
 
     return True
 
-def Information(x, hydro , bio, gas):
+def Information(x, hydro , bio, gas, suffix):
     """Dispatch: Statistics.Information(x, Flex)"""
 
     start = dt.datetime.now()
@@ -320,8 +327,8 @@ def Information(x, hydro , bio, gas):
 
     # S.Topology = np.array([]) # TODO Figure out topology
 
-    LPGM(S)
-    GGTA(S)
+    LPGM(S,suffix)
+    GGTA(S,suffix)
 
     end = dt.datetime.now()
     print("Statistics took", end - start)
@@ -329,10 +336,9 @@ def Information(x, hydro , bio, gas):
     return True
 
 if __name__ == '__main__':
-    # suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"
-    suffix = "Aus_Testing_1_HVAC"
-    Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
-    hydro = np.genfromtxt('Results/Dispatch_Hydro{}'.format(suffix), delimiter=',', skip_header=1)
-    bio = np.genfromtxt('Results/Dispatch_Bio{}'.format(suffix), delimiter=',', skip_header=1)
-    gas = np.genfromtxt('Results/Dispatch_Gas{}'.format(suffix), delimiter=',', skip_header=1)
-    Information(Optimisation_x, hydro, bio, gas)
+    suffix = "_5_TRUE_TRUE_1"
+    Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}.csv'.format(suffix), delimiter=',')
+    hydro = np.genfromtxt('Results/Dispatch_Hydro{}.csv'.format(suffix), delimiter=',', skip_header=1)
+    bio = np.genfromtxt('Results/Dispatch_Bio{}.csv'.format(suffix), delimiter=',', skip_header=1)
+    gas = np.genfromtxt('Results/Dispatch_Gas{}.csv'.format(suffix), delimiter=',', skip_header=1)
+    Information(Optimisation_x, hydro, bio, gas, suffix)

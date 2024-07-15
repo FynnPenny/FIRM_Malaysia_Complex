@@ -240,12 +240,12 @@ def Analysis(optimisation_x,suffix):
 
     # TODO fix statistics module
     from Statistics import Information
-    Information(optimisation_x,h,b,g)
+    Information(optimisation_x,h,b,g,suffix)
 
     return True
 
-if __name__=='__main__':
-    #suffix = "_APG_Full_HVAC_5_Hydrogen.csv"
-    suffix = "_newRun_AusChanges.csv"
-    optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
-    Analysis(optimisation_x,suffix)
+# if __name__=='__main__':
+#     #suffix = "_APG_Full_HVAC_5_Hydrogen.csv"
+#     suffix = "_newRun_AusChanges.csv"
+#     optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}.csv'.format(suffix), delimiter=',')
+#     Analysis(optimisation_x,suffix)

@@ -9,8 +9,11 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
     """Deficit = Simulation.Reliability(S, hydro=...)"""
 
     ###### CALCULATE NETLOAD FOR EACH INTERVAL ######
-    Netload = (solution.MLoad.sum(axis=1) - solution.GPV.sum(axis=1) - solution.GInter.sum(axis=1))[start:end] \
-        - hydro - bio - gas # - solution.GWind.sum(axis=1); Sj-ENLoad(j, t), MW
+    Netload = (solution.MLoad.sum(axis=1) \
+               - solution.GPV.sum(axis=1) \
+                - solution.GWind.sum(axis=1) \
+                - solution.GInter.sum(axis=1))[start:end] \
+                - hydro - bio - gas # Sj-ENLoad(j, t), MW
     length = len(Netload)
     
     solution.hydro = hydro # MW
@@ -91,7 +94,8 @@ if __name__ == '__main__':
     from Input import *
     from Network import Transmission 
 
-    suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"
+    #suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"\
+    suffix = '{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
     
     # Initialise the optimisation

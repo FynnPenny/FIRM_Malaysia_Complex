@@ -25,6 +25,7 @@ parser.add_argument('-v', default=0, type=int, required=False, help='Verbose=0,1
 args = parser.parse_args()
 
 # scenario = args.s
+maxit = args.i
 transmissionScenario = args.t
 node = args.n
 percapita = args.e
@@ -61,6 +62,8 @@ elif args.l == "False":
 else:
     print("-l must be True or False")
     exit()
+
+suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
 
 from Input import *
 from Simulation import Reliability
@@ -146,14 +149,14 @@ def F(x):
     GInter = sum(sum(S.GInter)) * resolution / years if len(S.GInter) > 0 else 0
 
     # Levelised cost of electricity calculation
-    cost = factor * np.array([sum(S.CPV),sum(S.CWind), GInter * pow(10,-6), sum(S.CPHP), S.CPHS, sum(S.CBP), S.CBS] + list(CDC) + [sum(S.CPV), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, 0, 0]) # $b p.a.
+    cost = factor * np.array([sum(S.CPV),sum(S.CWind), GInter * pow(10,-6), sum(S.CPHP), S.CPHS, sum(S.CBP), S.CBS] + list(CDC) + [sum(S.CPV), sum(S.CWind), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, 0, 0]) # $b p.a.
     cost = cost.sum()
     loss = np.sum(abs(TDC), axis=0) * TLoss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
     LCOE = cost / abs(energy - loss)
     print(LCOE)
 
-    with open('Results/record_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario), 'a', newline="") as csvfile:
+    with open('Results/record{}.csv'.format(suffix), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,LCOE]))
 
@@ -176,11 +179,13 @@ if __name__=='__main__':
 
     # start = np.genfromtxt('Results/init.csv', delimiter=',')    
 
+    disp = True if verbose > 0 else False
+
     result = differential_evolution(func=F, bounds=list(zip(lb, ub)), tol=0, # init=start,
                                     maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
-                                    disp=True, polish=False, updating='deferred', workers=14) ###### CHANGE WORKERS BACK TO -1
+                                    disp=disp, polish=False, updating='deferred', workers=-1)
 
-    with open('Results/Optimisation_resultx_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,args.i), 'w', newline="") as csvfile:
+    with open('Results/Optimisation_resultx{}.csv'.format(suffix), 'w', newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
@@ -188,4 +193,4 @@ if __name__=='__main__':
     print("Optimisation took", endtime - starttime)
 
     from Fill import Analysis
-    Analysis(result.x,'_{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,args.i))
+    Analysis(result.x,'{}.csv'.format(suffix))
