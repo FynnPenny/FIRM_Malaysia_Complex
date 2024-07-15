@@ -193,4 +193,4 @@ if __name__=='__main__':
     print("Optimisation took", endtime - starttime)
 
     from Fill import Analysis
-    Analysis(result.x,'{}.csv'.format(suffix))
+    Analysis(result.x,suffix)

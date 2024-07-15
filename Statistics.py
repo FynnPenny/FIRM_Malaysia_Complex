@@ -80,8 +80,14 @@ def LPGM(solution,suffix):
 
     Debug(solution)
 
+    # C = np.stack([(solution.MLoad).sum(axis=1), (solution.MGas).sum(axis=1),
+    #               solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), #solution.GWind.sum(axis=1),
+    #               solution.DischargePH, solution.DischargeB, solution.Deficit, -1 * solution.Spillage, -1 * solution.ChargePH, -1 * solution.ChargeB,
+    #               solution.StoragePH, solution.StorageB,
+    #               solution.FQ, solution.NQ, solution.NS, solution.NV, solution.AS, solution.SW, solution.TV])
+
     C = np.stack([(solution.MLoad).sum(axis=1), (solution.MGas).sum(axis=1),
-                  solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), #solution.GWind.sum(axis=1),
+                  solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), solution.GWind.sum(axis=1),
                   solution.DischargePH, solution.DischargeB, solution.Deficit, -1 * solution.Spillage, -1 * solution.ChargePH, -1 * solution.ChargeB,
                   solution.StoragePH, solution.StorageB,
                   solution.FQ, solution.NQ, solution.NS, solution.NV, solution.AS, solution.SW, solution.TV])
@@ -92,16 +98,18 @@ def LPGM(solution,suffix):
     C = np.insert(C.astype('str'), 0, datentime, axis=1)
 
     header = 'Date & time,Operational demand,Hydrogen (MW),' \
-             'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),PHES-Charge (MW),Battery-Charge (MW),' \
+             'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW),'\
+             'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),PHES-Charge (MW),Battery-Charge (MW),' \
              'PHES-Storage (MWh),Battery-Storage (MWh),' \
-             'FQ, NQ, NS, NV, AS, SW, TV'
+             'FQ,NQ,NS,NV,AS,SW,TV'
 
     np.savetxt('Results/LPGM{}_Network.csv'.format(suffix), C, fmt='%s', delimiter=',', header=header, comments='')
 
     # if 'APG' in node:
     if node > 17:
         header = 'Date & time,Operational demand,Hydrogen (MW),' \
-                 'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
+                 'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW)'\
+                 'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
                  'Transmission,PHES-Charge (MW),Battery-Charge (MW),' \
                  'PHES-Storage,Battery-Storage'
 
@@ -109,7 +117,7 @@ def LPGM(solution,suffix):
 
         for j in range(nodes):
             C = np.stack([(solution.MLoad)[:, j], (solution.MGas)[:, j],
-                          solution.MHydro[:, j], solution.MInter[:, j], solution.MBio[:, j], solution.MPV[:, j], #solution.MWind[:, j],
+                          solution.MHydro[:, j], solution.MInter[:, j], solution.MBio[:, j], solution.MPV[:, j], solution.MWind[:, j],
                           solution.MDischargePH[:, j], solution.MDischargeB[:, j], solution.MDeficit[:, j], -1 * solution.MSpillage[:, j], Topology[j], 
                           -1 * solution.MChargePH[:, j], -1 * solution.MChargeB[:, j],
                           solution.MStoragePH[:, j], solution.MStorageB[:, j]])
