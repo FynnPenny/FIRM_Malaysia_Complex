@@ -72,4 +72,4 @@ if __name__=='__main__':
     print(old_x)
 
     from Fill import Analysis
-    Analysis(old_x,'{}.csv'.format(suffix))
+    Analysis(old_x,'{}'.format(suffix))

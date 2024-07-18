@@ -94,13 +94,13 @@ def LPGM(solution,suffix):
     
     C = np.around(C.transpose())
 
-    datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%Y %H:%M') for x in range(intervals)])
+    datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%a %-d %b %Y %H:%M') for x in range(intervals)])
     C = np.insert(C.astype('str'), 0, datentime, axis=1)
 
     header = 'Date & time,Operational demand,Hydrogen (MW),' \
              'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW),'\
-             'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),PHES-Charge (MW),Battery-Charge (MW),' \
-             'PHES-Storage (MWh),Battery-Storage (MWh),' \
+             'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
+             'PHES-Charge (MW),Battery-Charge (MW),PHES-Storage (MWh),Battery-Storage (MWh),' \
              'FQ,NQ,NS,NV,AS,SW,TV'
 
     np.savetxt('Results/LPGM{}_Network.csv'.format(suffix), C, fmt='%s', delimiter=',', header=header, comments='')
@@ -108,19 +108,17 @@ def LPGM(solution,suffix):
     # if 'APG' in node:
     if node > 17:
         header = 'Date & time,Operational demand,Hydrogen (MW),' \
-                 'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW)'\
-                 'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
-                 'Transmission,PHES-Charge (MW),Battery-Charge (MW),' \
-                 'PHES-Storage,Battery-Storage'
+                 'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW),'\
+                 'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),Transmission,'\
+                 'PHES-Charge (MW),Battery-Charge (MW),PHES-Storage,Battery-Storage'
 
         Topology = solution.Topology[np.where(np.in1d(Nodel, coverage) == True)[0]]
 
         for j in range(nodes):
-            C = np.stack([(solution.MLoad)[:, j], (solution.MGas)[:, j],
-                          solution.MHydro[:, j], solution.MInter[:, j], solution.MBio[:, j], solution.MPV[:, j], solution.MWind[:, j],
-                          solution.MDischargePH[:, j], solution.MDischargeB[:, j], solution.MDeficit[:, j], -1 * solution.MSpillage[:, j], Topology[j], 
-                          -1 * solution.MChargePH[:, j], -1 * solution.MChargeB[:, j],
-                          solution.MStoragePH[:, j], solution.MStorageB[:, j]])
+            C = np.stack([(solution.MLoad)[:, j], (solution.MGas)[:, j]
+                          ,solution.MHydro[:, j], solution.MInter[:, j], solution.MBio[:, j], solution.MPV[:, j], solution.MWind[:, j]
+                          ,solution.MDischargePH[:, j], solution.MDischargeB[:, j], solution.MDeficit[:, j], -1 * solution.MSpillage[:, j], Topology[j]
+                          ,-1 * solution.MChargePH[:, j], -1 * solution.MChargeB[:, j],solution.MStoragePH[:, j], solution.MStorageB[:, j]])
             C = np.around(C.transpose())
 
             C = np.insert(C.astype('str'), 0, datentime, axis=1)
@@ -259,7 +257,7 @@ def GGTA(solution, suffix):
 
     return True
 
-def Information(x, hydro , bio, gas, suffix):
+def Information(x, hydro, bio, gas, suffix):
     """Dispatch: Statistics.Information(x, Flex)"""
 
     start = dt.datetime.now()

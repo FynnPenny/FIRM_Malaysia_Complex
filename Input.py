@@ -16,7 +16,7 @@ gasScenario = True """
 ###### NODAL LISTS ######
 Nodel       = np.array(['FNQ','NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
 PVl         = np.array(['NSW']*7 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*3 + ['SA' ]*6 + ['TAS']*0 + ['VIC']*1 + ['WA' ]*1 + ['NT' ]*1) # TODO what should these nodes actually be??
-Windl       = np.array(['NSW']*8 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*2 + ['SA' ]*8 + ['TAS']*4 + ['VIC']*4 + ['WA' ]*3 + ['NT' ]*1)
+Windl       = np.array(['NSW']*8 + ['FNQ']*1 + ['QLD']*2 + ['FNQ']*2 + ['SA' ]*8 + ['TAS']*4 + ['VIC']*4 + ['WA' ]*3 + ['NT' ]*1) # TODO FNQ here in different spots, surely not intentional
 pv_ub_np    = np.array([50.  ]*7 + [50.  ]*1 + [50.  ]*2 + [50.  ]*3 + [50.  ]*6 + [50.  ]*0 + [50.  ]*1 + [50.  ]*1 + [50.  ]*1)
 wind_ub_np  = np.array([50.  ]*8 + [50.  ]*1 + [50.  ]*2 + [50.  ]*2 + [50.  ]*8 + [50.  ]*4 + [50.  ]*4 + [50.  ]*3 + [50.  ]*1)
 phes_ub_np  = np.array([500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ]   + [500. ] + [0.] + [0.] + [0.]) # why are there three extra nodes???
@@ -249,7 +249,7 @@ class Solution:
 #        self.CPHP = list(x[pidx: phidx]) # CPHP(j), GW
         self.CBP = list(x[phidx: bidx])
         self.CPHS = x[bidx] # S-CPHS(j), GWh
-        self.CBS = x[bidx+1] 
+        self.CBS = x[bidx+1]
         self.efficiencyPH = efficiencyPH
         self.efficiencyB = efficiencyB
 
