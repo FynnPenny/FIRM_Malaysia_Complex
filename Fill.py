@@ -68,9 +68,9 @@ def fill_deficit(deficit,hydro,bio,gas,hydro_limit,bio_limit,gas_limit,hydro_ann
     return hydro,bio,gas
 
 def save(h,b,g,suffix):
-    np.savetxt('Results/Dispatch_Hydro' + suffix, h, fmt='%f', delimiter=',', newline='\n', header='Hydro')
-    np.savetxt('Results/Dispatch_Bio' + suffix, b, fmt='%f', delimiter=',', newline='\n', header='Bio')
-    np.savetxt('Results/Dispatch_Gas' + suffix, g, fmt='%f', delimiter=',', newline='\n', header='Gas')
+    np.savetxt('Results/Dispatch_Hydro{}.csv'.format(suffix), h, fmt='%f', delimiter=',', newline='\n', header='Hydro')
+    np.savetxt('Results/Dispatch_Bio{}.csv'.format(suffix), b, fmt='%f', delimiter=',', newline='\n', header='Bio')
+    np.savetxt('Results/Dispatch_Gas{}.csv'.format(suffix), g, fmt='%f', delimiter=',', newline='\n', header='Gas')
     
 def maxx(x):
     # return np.reshape(x, (-1, 8760)).sum(axis=-1).max()/1e6
