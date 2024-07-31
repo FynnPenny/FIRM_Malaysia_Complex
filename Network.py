@@ -62,7 +62,7 @@ def Transmission(solution, output=False):
     MChargeB = np.tile(solution.ChargeB, (nodes, 1)).transpose() * bfactor # MCharge: CHPH(j, t)
 
     MImport = MLoad + MChargePH + MChargeB + MSpillage \
-              - MPV - MInter - MHydro - MBio - MGas - MDischargePH - MDischargeB - MDeficit # - MWind; EIM(t, j), MW
+              - MPV - MWind - MInter - MHydro - MBio - MGas - MDischargePH - MDischargeB - MDeficit #; EIM(t, j), MW
     
     coverage = solution.coverage
     # if len(coverage) > 1:
@@ -99,13 +99,13 @@ def Transmission(solution, output=False):
         FQ = -1 * MImport[:, np.where(Nodel=='FNQ')[0][0]] if 'FNQ' in Nodel else np.zeros(intervals)
         AS = -1 * MImport[:, np.where(Nodel=='NT' )[0][0]] if 'NT'  in Nodel else np.zeros(intervals)
         SW =      MImport[:, np.where(Nodel=='WA' )[0][0]] if 'WA'  in Nodel else np.zeros(intervals)
-        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]] if 'TAS'  in Nodel else np.zeros(intervals)
+        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]] #if 'TAS'  in Nodel else np.zeros(intervals)
 
-        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ if 'NQ'  in Nodel else np.zeros(intervals)
-        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV if 'NV'  in Nodel else np.zeros(intervals)
+        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ #if 'NQ'  in Nodel else np.zeros(intervals)
+        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV #if 'NV'  in Nodel else np.zeros(intervals)
 
-        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV if 'NS'  in Nodel else np.zeros(intervals)
-        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW if 'NS'  in Nodel else np.zeros(intervals)
+        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV #if 'NS'  in Nodel else np.zeros(intervals)
+        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW #if 'NS'  in Nodel else np.zeros(intervals)
         assert abs(NS - NS1).max()<=0.1, print(abs(NS - NS1).max())
 
         TDC = np.array([FQ, NQ, NS, NV, AS, SW, TV]).transpose() # TDC(t, k), MW
@@ -117,7 +117,7 @@ def Transmission(solution, output=False):
         MStoragePH = np.tile(solution.StoragePH, (nodes, 1)).transpose() * pcfactor # SPH(t, j), MWh
         MStorageB  = np.tile(solution.StoragePH, (nodes, 1)).transpose() * bfactor  # SPH(t, j), MWh
         solution.MPV, solution.MInter, solution.MHydro, solution.MBio, solution.MGas = (MPV, MInter, MHydro, MBio, MGas)
-        solution.MWind = MWind        
+        solution.MWind = MWind
         solution.MDischargePH, solution.MChargePH, solution.MStoragePH = (MDischargePH, MChargePH, MStoragePH)
         solution.MDischargeB, solution.MChargeB, solution.MStorageB = (MDischargeB, MChargeB, MStorageB)
         solution.MDeficit, solution.MSpillage = (MDeficit, MSpillage)

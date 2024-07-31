@@ -19,7 +19,7 @@ parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 
 parser.add_argument('-t', default='HVAC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
-parser.add_argument('-f', default='False', type=str, required=False, help='Fossil fuels=True,False')
+parser.add_argument('-f', default=0, type=float, required=False, help='Fossil fuels=0,2,5 percent of total supply')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')
 parser.add_argument('-v', default=0, type=int, required=False, help='Verbose=0,1,2')
 args = parser.parse_args()
@@ -30,6 +30,7 @@ transmissionScenario = args.t
 node = args.n
 percapita = args.e
 verbose = args.v
+fossil = args.f
 
 if args.H == "True":
     gasScenario = True
@@ -39,13 +40,13 @@ else:
     print("-H must be True or False")
     exit()
 
-if args.f == "True":
-    fossilScenario = True
-elif args.f == "False":
-    fossilScenario = False
-else:
-    print("-f must be True or False")
-    exit()
+# if args.f == "True":
+#     fossilScenario = True
+# elif args.f == "False":
+#     fossilScenario = False
+# else:
+#     print("-f must be True or False")
+#     exit()
 
 if args.b == "True":
     batteryScenario = True
