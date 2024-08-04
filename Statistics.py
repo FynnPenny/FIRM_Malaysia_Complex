@@ -331,7 +331,7 @@ def Information(x, hydro, bio, gas, suffix):
                         -1*(S.NS + S.NQ + S.NV),        #NSW
                         -1*S.AS,                        #NT
                          S.NQ + S.FQ,                   #QLD
-                         S.NS + S.AS - S.SW,            #SA
+                         S.NS + - S.SW,                 #SA
                         -1*S.TV,                        #TAS 
                          S.NV + S.TV,                   #VIC
                          S.SW                           #WA 

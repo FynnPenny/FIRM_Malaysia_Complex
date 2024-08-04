@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, maxit
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, maxit, fossil
 ######### DEBUG ##########
 """ transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
@@ -34,7 +34,6 @@ resolution = 0.5
 
 
 ###### DATA IMPORTS ######
-# MLoad = np.genfromtxt('Data/electricity{}.csv'.format(percapita), delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
 MLoad = np.genfromtxt('Data/Australia/electricity.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Nodel))) # EOLoad(t, j), MW
 
 # for i in ['evan', 'erigid', 'earticulated', 'enonfreight', 'ebus', 'emotorcycle', 'erail', 'eair', 'ewater', 'ecooking', 'emanufacturing', 'emining']:
@@ -53,7 +52,7 @@ if verbose > 1: print("Data Loaded")
 
 CBaseloadR = np.array([0, 0, 0, 0, 0, 0.1, 0, 0]) * EHydro / 8760 # 24/7, GW # Run-of-river percentage
 # TODO Add in fossil baseload percentages - have left for now
-CBaseloadF = np.array([0, 0, 0, 0, 0, 0,   0, 0]) * 100 / 8760 # 24/7, GW # Run-of-river percentage
+CBaseloadF = np.array([0, 0, 0, 0, 0,  0,  0, 0]) * 100 / 8760 # 24/7, GW # Run-of-river percentage
 CBaseload  = CBaseloadF + CBaseloadR
 
 # TODO Add in fossil fuel baseload

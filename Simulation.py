@@ -207,10 +207,10 @@ if __name__ == '__main__':
     CostPH = factor['PHP'] * sum(S.CPHP) + factor['PHS'] * S.CPHS + factor['PHES-VOM'] * DischargePH.sum() * resolution / years * pow(10,-6) # A$b p.a.
     CostInter = factor['Inter'] * GInter # A$b p.a.
     CostBattery = factor['BP'] * sum(S.CBP) + factor['BS'] * S.CBS + factor['B-VOM'] * DischargeB.sum() * resolution / years * pow(10,-6) # A$b p.a.
-#    if node>=21:
-#        CostPH -= factor['LegPH']
+    if node>=21:
+        CostPH -= factor['LegPH']
 
-    CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
+    CostT = np.array([factor['FQ'],factor['NQ'],factor['NS'],factor['NV'],factor['AS'],factor['SW'],factor['TV']])
     CostDC, CostAC, CDC, CAC = [],[],[],[]
     
     CostDC, CostAC, CDC, CAC = [np.array(x) for x in [CostDC, CostAC, CDC, CAC]]
