@@ -37,19 +37,21 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
         Storage_B_t1 = StorageB[t-1] if t>0 else 0.5 * Scapacity_B
 
         ##### UPDATE STORAGE SYSTEMS ######
+        # Discharge PH before Battery and charge Battery before PH
         Discharge_PH_t = min(max(0, Netloadt), Pcapacity_PH, Storage_PH_t1 / resolution)
+        Charge_B_t = min(-1 * min(0, diff1), Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution) 
+
+        diff1 = Netloadt - Discharge_PH_t + Charge_B_t
+        
+        Discharge_B_t = min(max(0, diff1), Pcapacity_B, Storage_B_t1 / resolution)
         Charge_PH_t = min(-1 * min(0, Netloadt), Pcapacity_PH, (Scapacity_PH - Storage_PH_t1) / efficiencyPH / resolution)
+
+        Storage_B_t = Storage_B_t1 - Discharge_B_t * resolution + Charge_B_t * resolution * efficiencyB
         Storage_PH_t = Storage_PH_t1 - Discharge_PH_t * resolution + Charge_PH_t * resolution * efficiencyPH
 
         DischargePH[t] = Discharge_PH_t
         ChargePH[t] = Charge_PH_t
         StoragePH[t] = Storage_PH_t
-
-        diff1 = Netloadt - Discharge_PH_t + Charge_PH_t
-        
-        Discharge_B_t = min(max(0, diff1), Pcapacity_B, Storage_B_t1 / resolution)
-        Charge_B_t = min(-1 * min(0, diff1), Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution)
-        Storage_B_t = Storage_B_t1 - Discharge_B_t * resolution + Charge_B_t * resolution * efficiencyB
 
         DischargeB[t] = Discharge_B_t
         ChargeB[t] = Charge_B_t

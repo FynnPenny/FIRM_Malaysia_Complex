@@ -83,7 +83,7 @@ elif transmissionScenario=='HVAC': # TODO: Transition to Aus
     dc_flags = np.array([False,False,False,False,False,False,False]) # Australia
     
 TLoss = []
-TDistances = [50,50,50,50,50,50,50] # ['FQ','NQ','NS','NV','AS','SW','TV']] # TODO integrate transmission distances and losses from openCEM
+TDistances = [50,50,50,50,50,50,50] # ['FQ','NQ','NS','NV','AS','SW','TV']] # TODO integrate transmission distances and losses from ISP
 # TDistances = [135, 165, 90, 170, 175, 675, 135, 135, 935, 200, 260, 450] # ['KDPE', 'TEPA', 'SEME', 'MEJO', 'PESE', 'SBSW', 'KTTE', 'PASE', 'JOSW', 'THKD', 'INSE', 'PHSB']
 for i in range(0,len(dc_flags)):
     TLoss.append(TDistances[i]*0.03) if dc_flags[i] else TLoss.append(TDistances[i]*0.07)
@@ -245,7 +245,6 @@ class Solution:
         self.GWind = TSWind * np.tile(self.CWind, (intervals, 1)) * pow(10, 3) # GWind(i, t), GW to MW
 
         self.CPHP = list(x[widx: phidx]) # CPHP(j), GW
-#        self.CPHP = list(x[pidx: phidx]) # CPHP(j), GW
         self.CBP = list(x[phidx: bidx])
         self.CPHS = x[bidx] # S-CPHS(j), GWh
         self.CBS = x[bidx+1]

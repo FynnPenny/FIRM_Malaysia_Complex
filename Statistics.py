@@ -14,8 +14,7 @@ import datetime as dt
 def Debug(solution):
     """Debugging"""
 
-    Load, PV, Inter = (solution.MLoad.sum(axis=1), solution.GPV.sum(axis=1), solution.GInter.sum(axis=1))
-    Wind = solution.GWind.sum(axis=1)
+    Load, PV, Wind, Inter = (solution.MLoad.sum(axis=1), solution.GPV.sum(axis=1), solution.GWind.sum(axis=1), solution.GInter.sum(axis=1))
     Hydro, Bio, Gas = (solution.MHydro.sum(axis=1), solution.MBio.sum(axis=1), solution.MGas.sum(axis=1))
 
     DischargePH, ChargePH, StoragePH = (solution.DischargePH, solution.ChargePH, solution.StoragePH)
@@ -141,15 +140,15 @@ def GGTA(solution, suffix):
     factor = dict(factor)
 
     # Import capacities [GW, GWh] from the least-cost solution
-    CPV, CInter, CPHP, CBP, CPHS, CBS = (sum(solution.CPV), sum(solution.CInter), sum(solution.CPHP), sum(solution.CBP), solution.CPHS, solution.CBS) # GW, GWh
-    CWind = sum(solution.CWind)
+    CPV, CWind, CInter, CPHP, CBP, CPHS, CBS = (sum(solution.CPV), sum(solution.CWind), sum(solution.CInter), sum(solution.CPHP), sum(solution.CBP), solution.CPHS, solution.CBS) # GW, GWh                                      
     CapHydro, CapBio = CHydro.sum(), CBio.sum() # GW
     CapGas = (solution.MGas.sum(axis=1)).max() * pow(10,-3) # GW
 
     # Import generation energy [GWh] from the least-cost solution
-    GPV, GHydro, GGas, GInter, GBio = map(lambda x: x * pow(10, -6) * resolution / years, (solution.GPV.sum(), solution.MHydro.sum(), solution.MGas.sum(), solution.MInter.sum(), solution.MBio.sum())) # TWh p.a.
+    GPV, GWind, GHydro, GGas, GInter, GBio = map(lambda x: x * pow(10, -6) * resolution / years, (solution.GPV.sum(), solution.GWind.sum(), solution.MHydro.sum(), solution.MGas.sum(), solution.MInter.sum(), solution.MBio.sum())) # TWh p.a.
     DischargePH, DischargeB = (solution.DischargePH.sum(), solution.DischargeB.sum())
-    GWind = solution.GWind.sum()
+    
+    # Calculate Capacity Factor
     CFPV = GPV / CPV / 8.76
     CFWind = GWind / CWind / 8.76
     

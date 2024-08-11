@@ -21,7 +21,7 @@ parser.add_argument('-H', default='True', type=str, required=False, help='Hydrog
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 parser.add_argument('-f', default=0, type=float, required=False, help='Fossil fuels=0,2,5 percent of total supply')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')
-parser.add_argument('-v', default=0, type=int, required=False, help='Verbose=0,1,2')
+parser.add_argument('-v', default=1, type=int, required=False, help='Verbose=0,1,2')
 args = parser.parse_args()
 
 # scenario = args.s
