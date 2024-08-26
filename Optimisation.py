@@ -16,9 +16,10 @@ parser.add_argument('-r', default=0.3, type=float, required=False, help='recombi
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
 # parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
-parser.add_argument('-t', default='HVAC', type=str, required=False, help='HVDC, HVAC')
+parser.add_argument('-t', default='HVDC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
-parser.add_argument('-g', default=)
+parser.add_argument('-g', default=None, type=str, required=False,help='Maximum Gas Capacity (MW)')
+parser.add_argument('-G', default=None, type=str, required=False, help='Maximum annual gas generation (percent of total)')
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 parser.add_argument('-f', default=0, type=float, required=False, help='Fossil fuels=0,2,5 percent of total supply')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')
@@ -31,6 +32,8 @@ transmissionScenario = args.t
 node = args.n
 percapita = args.e
 verbose = args.v
+gasCapLim = args.g
+gasGenLim = args.G 
 fossil = args.f
 
 if args.H == "True":
@@ -48,6 +51,7 @@ else:
 # else:
 #     print("-f must be True or False")
 #     exit()
+
 
 if args.b == "True":
     batteryScenario = True
@@ -82,21 +86,18 @@ def F(x):
     # Simulation with only baseload
     if verbose > 1: print("Starting deficit calculation 1")
     Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, hydro=baseload, bio=np.zeros(intervals), gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
-    # Max_deficit1 = np.reshape(Deficit1, (-1, 8760)).sum(axis=-1) # MWh per year
     Max_deficit1 = yearfunc(Deficit1,np.max) # MWh per year
     PFlexible_Gas = Deficit1.max() * pow(10, -3) # GW
 
     # Simulation with only baseload and hydro (cheapest)
     if verbose > 1: print("Starting deficit calculation 2")
     Deficit_energy2, Deficit_power2, Deficit2, DischargePH2, DischargeB2 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio=np.zeros(intervals), gas=np.zeros(intervals))
-    # Max_deficit2 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
     Max_deficit2 = yearfunc(Deficit2,np.max) # MWh per year
     PBio_Gas = Deficit2.max() * pow(10, -3) # GW
 
     # Simulation with only baseload, hydro and bio (next cheapest)
     if verbose > 1: print("Starting deficit calculation 3")
     Deficit_energy3, Deficit_power3, Deficit3, DischargePH3, DischargeB3 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
-    # Max_deficit3 = np.reshape(Deficit3, (-1, 8760)).sum(axis=-1) # MWh per year
     Max_deficit3 = yearfunc(Deficit3,np.max) # MWh per year
     PGas = Deficit3.max() * pow(10, -3) # GW
     
@@ -114,10 +115,10 @@ def F(x):
     Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.ones(intervals) * CGas.sum() * pow(10, 3))
     
     # Deficit penalty function
-    # PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)*pow(10,3) # TODO Is this doing what it should?
+    # PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)*pow(10,3)
     PenDeficit = (yearfunc(Deficit,np.sum) * resolution - S.allowance).clip(0,None).sum()*pow(10,3)
 
-    # Existing capacity generation profiles    
+    # Existing capacity generation profiles
     gas = np.clip(Deficit3, 0, CGas.sum() * pow(10, 3))
     bio = np.clip(Deficit2 - Deficit3, 0, CBio.sum() * pow(10, 3))
     hydro = np.clip(Deficit1 - Deficit2, 0, CHydro.sum() * pow(10, 3)) + baseload
@@ -131,16 +132,19 @@ def F(x):
 
     # Transmission capacity calculations TODO: Change to Aus
     TDC = Transmission(S) if node > 19 else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
-    # TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
-
     CDC = np.amax(abs(TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
+    PenDC = max(0, CDC[6] - CDC6max) * pow(10, 3) # GW to MW
+    # PenDC *= pow(10, 3) # Blow up penalty function What is this for?
+
+    # TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
 
     # # Transmission penalty function 
     # PenDC = max(0, CDC[9] - CDC9max) * pow(10, 3) # GW to MW
     # PenDC += max(0, CDC[10] - CDC10max) * pow(10, 3) # GW to MW
     # PenDC += max(0, CDC[11] - CDC11max) * pow(10, 3) # GW to MW
+
     # PenDC *= pow(10, 3) # Blow up penalty function
-    PenDC = 0 # No international interconnectors for Australia - could add?
+    # PenDC = 0 # No international interconnectors for Australia - could add?
 
     # Maximum annual electricity generated by existing capacity
     GGas = resolution * gas.sum() / years / efficiencyPH

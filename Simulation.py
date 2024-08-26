@@ -21,8 +21,8 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
     solution.gas = gas
 
     ###### CREATE STORAGE SYSTEM VARIABLES ######
-    Pcapacity_PH = sum(solution.CPHP) * pow(10, 3) # S-CPHP(j), GW to MW
-    Pcapacity_B = sum(solution.CBP) * pow(10,3)
+    Pcapacity_PH = sum(solution.CPHP) * pow(10, 3) #if hasattr(solution.CPHP, '__iter__') else solution.CPHP * pow(10, 3) # S-CPHP(j), GW to MW
+    Pcapacity_B = sum(solution.CBP) * pow(10,3) #if hasattr(solution.CPHP, '__iter__') else solution.CPHP * pow(10, 3)#
     Scapacity_PH = solution.CPHS * pow(10, 3) # S-CPHS(j), GWh to MWh
     Scapacity_B = solution.CBS * pow(10,3)
     efficiencyPH, efficiencyB, resolution = (solution.efficiencyPH, solution.efficiencyB, solution.resolution)

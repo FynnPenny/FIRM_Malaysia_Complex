@@ -157,7 +157,7 @@ def GGTA(solution, suffix):
     CostWind = factor['Wind'] * CWind # A$b p.a.
     CostHydro = factor['Hydro'] * GHydro # A$b p.a.
     CostBio = factor['Bio'] * GBio # A$b p.a.
-    CostGas = factor['GasCap'] * CapGas + factor['GasFuel'] * GGas # A$b p.a.
+    CostGas = factor['GasCap'] * CapGas + factor['GasSRMC'] * GGas # A$b p.a.
     CostPH = factor['PHP'] * CPHP + factor['PHS'] * CPHS + factor['PHES-VOM'] * DischargePH * resolution / years * pow(10,-6) # A$b p.a.
     CostInter = factor['Inter'] * GInter # A$b p.a.
     CostBattery = factor['BP'] * CBP + factor['BS'] * CBS + factor['B-VOM'] * DischargeB * resolution / years * pow(10,-6) # A$b p.a.
