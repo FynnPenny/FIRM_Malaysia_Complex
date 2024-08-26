@@ -18,6 +18,7 @@ parser.add_argument('-e', default=5, type=int, required=False, help='per-capita 
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
 parser.add_argument('-t', default='HVAC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
+parser.add_argument('-g', default=)
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 parser.add_argument('-f', default=0, type=float, required=False, help='Fossil fuels=0,2,5 percent of total supply')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')

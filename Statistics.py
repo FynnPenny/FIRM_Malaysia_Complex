@@ -189,7 +189,7 @@ def GGTA(solution, suffix):
     Loss = Loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
 
     # Calculate the levelised cost of elcetricity at a network level
-    LCOE = (CostPV + CostInter + CostBattery + CostGas + CostHydro + CostBio + CostPH + CostDC + CostAC) / (Energy - Loss) # + CostWind / (Energy - Loss)
+    LCOE = (CostPV + CostWind + CostBattery + CostGas + CostHydro + CostBio + CostPH + CostInter + CostDC + CostAC) / (Energy - Loss)
     LCOEPV = CostPV / (Energy - Loss)
     LCOEWind = CostWind / (Energy - Loss)
     LCOEInter = CostInter / (Energy - Loss)
@@ -201,10 +201,8 @@ def GGTA(solution, suffix):
     LCOEDC = CostDC / (Energy - Loss)
     LCOEAC = CostAC / (Energy - Loss)
     
-    # Calculate the levelised cost of generation
-#    LCOG = (CostPV + CostWind + CostHydro + CostBio) * pow(10, 3) / (GPV + GWind + GHydro + GBio)
-#    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro + GBio + GGas + GInter)
-    LCOG = (CostPV + CostWind + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GWind + GHydro + GBio + GGas + GInter)
+    # Calculate the levelised cost of generation    
+    LCOG = (CostPV + CostWind + CostGas + CostHydro + CostBio + CostInter) * pow(10, 3) / (GPV + GWind + GGas + GHydro + GBio + GInter)
     LCOGP = CostPV * pow(10, 3) / GPV if GPV!=0 else 0
     LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
     LCOGH = CostHydro * pow(10, 3) / GHydro if GHydro!=0 else 0
@@ -269,15 +267,10 @@ def Information(x, hydro, bio, gas, suffix):
         assert Deficit.sum() * resolution < 0.1, 'Energy generation and demand are not balanced.'
     except AssertionError:
         pass
-    
-    # assert np.reshape(hydro, (-1, 8760)).sum(axis=-1).max() <= Hydromax, f"Hydro generation exceeds requirement {np.reshape(hydro, (-1, 8760)).sum(axis=-1).max()} {Hydromax}"
-    # assert np.reshape(bio, (-1, 8760)).sum(axis=-1).max() <= Biomax, f"Bio generation exceeds requirement {np.reshape(bio, (-1, 8760)).sum(axis=-1).max()} {Biomax}"
-    # assert np.reshape(gas, (-1, 8760)).sum(axis=-1).max() <= Gasmax, f"Gas generation exceeds requirement {np.reshape(gas, (-1, 8760)).sum(axis=-1).max()} {Gasmax}"
 
     assert yearfunc(hydro,np.sum).max() <= Hydromax, f"Hydro generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Hydromax}"
     assert yearfunc(bio, np.sum).max() <= Biomax, f"Bio generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Biomax}"
     assert yearfunc(gas, np.sum).max() <= Gasmax, f"Gas generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Gasmax}"
-
 
     #S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
     S.TDC = Transmission(S, output=True)

@@ -30,6 +30,9 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
     DischargePH, ChargePH, StoragePH, DischargeB, ChargeB, StorageB = map(np.zeros, [length] * 6)
     Deficit_energy, Deficit_power = map(np.zeros, [length] * 2)
 
+    netSurplus = -1 * np.clip(Netload,[None,0])
+    netDeficit =      np.clip(Netload,[0,None])
+
     for t in range(length):
         ###### INITIALISE INTERVAL ######
         Netloadt = Netload[t]
@@ -38,14 +41,21 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
 
         ##### UPDATE STORAGE SYSTEMS ######
         # Discharge PH before Battery and charge Battery before PH
-        Discharge_PH_t = min(max(0, Netloadt), Pcapacity_PH, Storage_PH_t1 / resolution)
-        Charge_B_t = min(-1 * min(0, Netloadt), Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution) 
+        if Netloadt < 0:
+            Charge_B_t = min(-1*Netloadt, Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution)
+            diff1 = Netloadt + Charge_B_t
+            Charge_PH_t = min(-1 * diff1, Pcapacity_PH, (Scapacity_PH - Storage_PH_t1) / efficiencyPH / resolution)
 
-        diff1 = Netloadt - Discharge_PH_t + Charge_B_t
+            Discharge_B_t = 0
+            Discharge_PT_t = 0
+        else:
+            Discharge_PH_t = min(Netloadt, Pcapacity_PH, Storage_PH_t1 / resolution)
+            diff1 = Netloadt - Discharge_PH_t
+            Discharge_B_t = min(diff1, Pcapacity_B, Storage_B_t1 / resolution)
+
+            Charge_B_t = 0
+            Charge_PH_t = 0
         
-        Discharge_B_t = min(max(0, diff1), Pcapacity_B, Storage_B_t1 / resolution)
-        Charge_PH_t = min(-1 * min(0, diff1), Pcapacity_PH, (Scapacity_PH - Storage_PH_t1) / efficiencyPH / resolution)
-
         Storage_B_t = Storage_B_t1 - Discharge_B_t * resolution + Charge_B_t * resolution * efficiencyB
         Storage_PH_t = Storage_PH_t1 - Discharge_PH_t * resolution + Charge_PH_t * resolution * efficiencyPH
 
@@ -97,30 +107,27 @@ if __name__ == '__main__':
     from Network import Transmission 
 
     #suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"\
-    #suffix = '{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
-    suffix = '_11_HVAC_5_True_True_101.csv'
+    suffix = '{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
     Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
+    
     # Initialise the optimisation
     S = Solution(Optimisation_x)
 
     CGas = np.nan_to_num(np.array(S.CGas))
     
     # Simulation with only baseload
-    if verbose > 1: print("Starting deficit calculation 1")
     Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, hydro=baseload, bio=np.zeros(intervals), gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
-    Max_deficit1 = yearfunc(Deficit1,np.max) # MWh per year
+    Max_deficit1 = np.reshape(Deficit1, (-1, 8760)).sum(axis=-1) # MWh per year
     PFlexible_Gas = Deficit1.max() * pow(10, -3) # GW
 
     # Simulation with only baseload and hydro (cheapest)
-    if verbose > 1: print("Starting deficit calculation 2")
     Deficit_energy2, Deficit_power2, Deficit2, DischargePH2, DischargeB2 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio=np.zeros(intervals), gas=np.zeros(intervals))
-    Max_deficit2 = yearfunc(Deficit2,np.max) # MWh per year
+    Max_deficit2 = np.reshape(Deficit2, (-1, 8760)).sum(axis=-1) # MWh per year
     PBio_Gas = Deficit2.max() * pow(10, -3) # GW
 
     # Simulation with only baseload, hydro and bio (next cheapest)
-    if verbose > 1: print("Starting deficit calculation 3")
     Deficit_energy3, Deficit_power3, Deficit3, DischargePH3, DischargeB3 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
-    Max_deficit3 = yearfunc(Deficit3,np.max) # MWh per year
+    Max_deficit3 = np.reshape(Deficit3, (-1, 8760)).sum(axis=-1) # MWh per year
     PGas = Deficit3.max() * pow(10, -3) # GW
     
     # Assume all storage provided by PHES (lowest efficiency i.e. worst cast). Look at maximum generation years for energy penalty function
@@ -250,6 +257,9 @@ if __name__ == '__main__':
     GPV = S.GPV.sum() * pow(10, -6) * resolution / years
     GWind = S.GWind.sum() * pow(10, -6) * resolution / years
     LCOG = (CostPV + CostWind + CostGas + CostHydro + CostBio + CostInter) * pow(10, 3) / (GPV + GWind + GGas + GHydro + GBio + GInter)
+    # LCOG  = (CostPV + CostWind + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3)\
+    #        /(GPV + GWind + GHydro* pow(10,-6) + GBio* pow(10,-6) + GGas* pow(10,-6) + GInter* pow(10,-6))
+#    LCOG = (CostPV + CostHydro + CostBio + CostGas + CostInter) * pow(10, 3) / (GPV + GHydro* pow(10,-6) + GBio* pow(10,-6) + GGas* pow(10,-6) + GInter* pow(10,-6))
     LCOGP = CostPV * pow(10, 3) / GPV if GPV!=0 else 0
     LCOGW = CostWind * pow(10, 3) / GWind if GWind!=0 else 0
     LCOGH = CostHydro * pow(10, 3) / (GHydro* pow(10,-6)) if GHydro!=0 else 0

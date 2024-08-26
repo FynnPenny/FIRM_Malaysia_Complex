@@ -238,7 +238,6 @@ def Analysis(optimisation_x,suffix):
     endtime = dt.datetime.now()
     print('Deficit fill took', endtime - starttime)
 
-    # TODO fix statistics module
     from Statistics import Information
     Information(optimisation_x,h,b,g,suffix)
 
