@@ -16,10 +16,12 @@ parser.add_argument('-r', default=0.3, type=float, required=False, help='recombi
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
 # parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
+parser.add_argument('-q', default=0, type=int, required=False, help='Quick test run')
+parser.add_argument('-P', default=0, type=int, required=False, help='Use results from previous run')
 parser.add_argument('-t', default='HVDC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
-parser.add_argument('-g', default=None, type=str, required=False,help='Maximum Gas Capacity (MW)')
-parser.add_argument('-G', default=None, type=str, required=False, help='Maximum annual gas generation (percent of total)')
+parser.add_argument('-g', default=None, type=float, required=False,help='Maximum Gas Capacity (MW)')
+parser.add_argument('-G', default=None, type=float, required=False, help='Maximum annual gas generation (percent of total)')
 parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 parser.add_argument('-f', default=0, type=float, required=False, help='Fossil fuels=0,2,5 percent of total supply')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')
@@ -35,6 +37,8 @@ verbose = args.v
 gasCapLim = args.g
 gasGenLim = args.G 
 fossil = args.f
+quick = args.q
+previous = args.P
 
 if args.H == "True":
     gasScenario = True
@@ -69,7 +73,7 @@ else:
     print("-l must be True or False")
     exit()
 
-suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
+suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
 
 from Input import *
 from Simulation import Reliability
@@ -86,19 +90,19 @@ def F(x):
     # Simulation with only baseload
     if verbose > 1: print("Starting deficit calculation 1")
     Deficit_energy1, Deficit_power1, Deficit1, DischargePH1, DischargeB1 = Reliability(S, hydro=baseload, bio=np.zeros(intervals), gas=np.zeros(intervals)) # Sj-EDE(t, j), MW
-    Max_deficit1 = yearfunc(Deficit1,np.max) # MWh per year
+    Max_deficit1 = yearfunc(Deficit1,np.sum) # MWh per year
     PFlexible_Gas = Deficit1.max() * pow(10, -3) # GW
 
     # Simulation with only baseload and hydro (cheapest)
     if verbose > 1: print("Starting deficit calculation 2")
     Deficit_energy2, Deficit_power2, Deficit2, DischargePH2, DischargeB2 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio=np.zeros(intervals), gas=np.zeros(intervals))
-    Max_deficit2 = yearfunc(Deficit2,np.max) # MWh per year
+    Max_deficit2 = yearfunc(Deficit2,np.sum) # MWh per year
     PBio_Gas = Deficit2.max() * pow(10, -3) # GW
 
     # Simulation with only baseload, hydro and bio (next cheapest)
     if verbose > 1: print("Starting deficit calculation 3")
     Deficit_energy3, Deficit_power3, Deficit3, DischargePH3, DischargeB3 = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.zeros(intervals))
-    Max_deficit3 = yearfunc(Deficit3,np.max) # MWh per year
+    Max_deficit3 = yearfunc(Deficit3,np.sum) # MWh per year
     PGas = Deficit3.max() * pow(10, -3) # GW
     
     # Assume all storage provided by PHES (lowest efficiency i.e. worst cast). Look at maximum generation years for energy penalty function
@@ -187,7 +191,20 @@ if __name__=='__main__':
 
     disp = True if verbose > 0 else False
 
-    result = differential_evolution(func=F, bounds=list(zip(lb, ub)), tol=0, # init=start,
+    if previous:
+        prevbest = np.genfromtxt('Results/Optimisation_resultx{}.csv'.format(suffix), delimiter=',')
+        prevbest = prevbest.reshape(1,-1)
+
+        prevsols = np.genfromtxt('Results/record{}.csv'.format(suffix), delimiter=',',invalid_raise=False)
+        prevsols = prevsols[-10:,:len(lb)] if prevsols.shape[0] > 10 else prevsols
+
+        start = np.concatenate((prevsols,prevbest),0)
+
+        result = differential_evolution(func=F, bounds=list(zip(lb, ub)), tol=0, init=start,
+                                    maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
+                                    disp=disp, polish=False, updating='deferred', workers=-1)
+    else:
+        result = differential_evolution(func=F, bounds=list(zip(lb, ub)), tol=0, # init=start,
                                     maxiter=args.i, popsize=args.p, mutation=args.m, recombination=args.r,
                                     disp=disp, polish=False, updating='deferred', workers=-1)
 
@@ -195,8 +212,11 @@ if __name__=='__main__':
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
+
+
     endtime = dt.datetime.now()
     print("Optimisation took", endtime - starttime)
 
-    from Fill import Analysis
-    Analysis(result.x,suffix)
+    if not(quick):
+        from Fill import Analysis
+        Analysis(result.x,suffix)

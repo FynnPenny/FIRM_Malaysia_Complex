@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, gasCapLim, gasGenLim, maxit, fossil
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, gasCapLim, gasGenLim, quick, maxit, fossil
 ######### DEBUG ##########
 """ transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
@@ -32,6 +32,11 @@ MLoad = np.genfromtxt('Data/Australia/electricity.csv', delimiter=',', skip_head
 
 TSPV = np.genfromtxt('Data/Australia/pv.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(PVl))) # TSPV(t, i), MW
 TSWind = np.genfromtxt('Data/Australia/wind.csv', delimiter=',', skip_header=1, usecols=range(4, 4+len(Windl))) # TSWind(t, i), MW
+if quick:
+    MLoad  = MLoad[0:int(24*366/resolution),:] # Use first year of data only
+    TSPV   = TSPV[0:int(24*366/resolution),:] # Use first year of data only
+    TSWind = TSWind[0:int(24*366/resolution),:] # Use first year of data only
+    
 assets = np.genfromtxt('Data/Australia/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
 # TODO: Does Aus model need energy constraints on hydrobio? Need actual numbers if so
@@ -65,7 +70,7 @@ CDC6max = 3 * 0.63 # GW from FIRM Aus
 if transmissionScenario=='HVDC':
     # HVDC backbone scenario
     # dc_flags = np.array([True,True,True,True,True,True,True,True,True,True,True,True]) # Old
-    dc_flags = np.array([True,True,True,True,True,True,True,True]) # Australia
+    dc_flags = np.array([True,True,True,True,True,True,True]) # Australia
     
 elif transmissionScenario=='HVAC': # TODO: Transition to Aus
     # HVAC backbone scenario
@@ -87,7 +92,7 @@ efficiencyB = 0.9
 factor = np.genfromtxt('Data/Australia/factor.csv',delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
-firstyear, finalyear, timestep = (2020,2029,1)
+firstyear, finalyear, timestep = (2020,2020,1) if quick else (2020,2029,1)
 if leapYearData:
     leaps = np.array((np.arange(firstyear,finalyear+1,timestep) % 4) == 0)
 else:
@@ -199,7 +204,7 @@ allowance = 0.00002*yearfunc(MLoad,np.max) # Allowable annual deficit of 0.002%,
 GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
 
 if gasGenLim:
-    Gasmax = energy * (gasGenLim/100) * pow(10,9) # MWh
+    Gasmax = energy * (gasGenLim/10000) * pow(10,9) # MWh
 else:
     Gasmax = energy * 2 * pow(10,9) # MWh
 
@@ -211,7 +216,6 @@ battery_ub = [20.] * (nodes - inters) + inters * [0] if batteryScenario == True 
 phes_s_ub = [10000.]
 battery_s_ub = [100.] if batteryScenario == True else [0]
 inter_ub = [500.] * inters if node == 'APG_Full' else inters * [0] # Ignored for Aus
-
 gas_ub = [30.] * (nodes - inters) + inters * [0] if gasScenario == True else nodes * [0]
 
 class Solution:
