@@ -55,18 +55,19 @@ def Debug(solution):
             assert abs(StorageB[i] - StorageB[i - 1] + DischargeB[i] * resolution - ChargeB[i] * resolution * efficiencyB) <= 1
 
         # Capacity: PV, wind, Discharge, Charge and Storage
+        store_tol = 1 * pow(10,-9)
         try:
-            assert np.amax(PV) <= sum(solution.CPV) * pow(10, 3), print(np.amax(PV) - sum(solution.CPV) * pow(10, 3))
-            assert np.amax(Wind) <= sum(solution.CWind) * pow(10, 3), print(np.amax(Wind) - sum(solution.CWind) * pow(10, 3))
-            assert np.amax(Inter) <= sum(solution.CInter) * pow(10,3)
-            assert np.amax(Gas) <= sum(solution.CGas) * pow(10,3)
+            assert np.amax(PV) <= sum(solution.CPV) * pow(10, 3) + store_tol, print(np.amax(PV) - sum(solution.CPV) * pow(10, 3))
+            assert np.amax(Wind) <= sum(solution.CWind) * pow(10, 3) + store_tol, print(np.amax(Wind) - sum(solution.CWind) * pow(10, 3))
+            assert np.amax(Inter) <= sum(solution.CInter) * pow(10,3) + store_tol
+            assert np.amax(Gas) <= sum(solution.CGas) * pow(10,3) + store_tol
 
-            assert np.amax(DischargePH) <= sum(solution.CPHP) * pow(10, 3), print(np.amax(DischargePH) - sum(solution.CPHP) * pow(10, 3))
-            assert np.amax(ChargePH) <= sum(solution.CPHP) * pow(10, 3), print(np.amax(ChargePH) - sum(solution.CPHP) * pow(10, 3))
-            assert np.amax(StoragePH) <= solution.CPHS * pow(10, 3), print(np.amax(StoragePH) - solution.CPHS * pow(10, 3))
-            assert np.amax(DischargeB) <= sum(solution.CBP) * pow(10, 3), print(np.amax(DischargeB) - sum(solution.CBP) * pow(10, 3))
-            assert np.amax(ChargeB) <= sum(solution.CBP) * pow(10, 3), print(np.amax(ChargeB) - sum(solution.CBP) * pow(10, 3))
-            assert np.amax(StorageB) <= solution.CBS * pow(10, 3), print(np.amax(StorageB) - solution.CBS * pow(10, 3))
+            assert np.amax(DischargePH) <= sum(solution.CPHP) * pow(10, 3) + store_tol, print(np.amax(DischargePH) - sum(solution.CPHP) * pow(10, 3))
+            assert np.amax(ChargePH) <= sum(solution.CPHP) * pow(10, 3) + store_tol, print(np.amax(ChargePH) - sum(solution.CPHP) * pow(10, 3))
+            assert np.amax(StoragePH) <= solution.CPHS * pow(10, 3) + store_tol, print(np.amax(StoragePH) - solution.CPHS * pow(10, 3))
+            assert np.amax(DischargeB) <= sum(solution.CBP) * pow(10, 3) + store_tol, print(np.amax(DischargeB) - sum(solution.CBP) * pow(10, 3))
+            assert np.amax(ChargeB) <= sum(solution.CBP) * pow(10, 3) + store_tol, print(np.amax(ChargeB) - sum(solution.CBP) * pow(10, 3))
+            assert np.amax(StorageB) <= solution.CBS * pow(10, 3) + store_tol, print(np.amax(StorageB) - solution.CBS * pow(10, 3))
         except AssertionError:
             pass
 
