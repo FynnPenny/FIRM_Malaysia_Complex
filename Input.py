@@ -197,13 +197,13 @@ contingency_ph = list(0.25 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 contingency_b = list(0.1 * (MLoad).max(axis=0) * pow(10, -3)) # MW to GW
 
 # manage = 0 # weeks TODO What is this for?? What are these things supposed to be doing??
-# allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiencyPH # MWh
 
+# allowance = MLoad.sum(axis=1).max() * 0.05 * manage * 168 * efficiencyPH # MWh
 allowance = 0.00002*yearfunc(MLoad,np.max) # Allowable annual deficit of 0.002%, MWh 
 
 GBaseload = np.tile(CBaseload, (intervals, 1)) * pow(10, 3) # GW to MW
 
-if gasGenLim:
+if gasGenLim is not None:
     Gasmax = energy * (gasGenLim/10000) * pow(10,9) # MWh
 else:
     Gasmax = energy * 2 * pow(10,9) # MWh

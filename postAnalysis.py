@@ -11,6 +11,8 @@ parser.add_argument('-r', default=0.3, type=float, required=False, help='recombi
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
 parser.add_argument('-t', default='HVDC', type=str, required=False, help='HVDC, HVAC')
+parser.add_argument('-a', default=1, type=int, required=False, help='run post analysis')
+parser.add_argument('-q', default=0, type=int, required=False, help='Quick test run')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
 parser.add_argument('-g', default=None, type=float, required=False,help='Maximum Gas Capacity (MW)')
 parser.add_argument('-G', default=None, type=float, required=False, help='Maximum annual gas generation (percent of total)')
@@ -29,6 +31,7 @@ verbose = args.v
 gasCapLim = args.g
 gasGenLim = args.G 
 fossil = args.f
+quick = args.q
 
 if args.H == "True":
     gasScenario = True
@@ -63,7 +66,10 @@ else:
     print("-l must be True or False")
     exit()
 
-suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+if quick:
+    suffix = '_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+else:
+    suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
 
 
 # from Input import *
@@ -71,7 +77,11 @@ suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,battery
 # from Network import Transmission
 
 if __name__=='__main__':
-    suffix = '_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario)
+    if quick:
+        suffix = '_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+    else:
+        suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+
     print('Results/Optimisation_resultx{}.csv'.format(suffix))
     with open('Results/Optimisation_resultx{}.csv'.format(suffix),newline="") as csvfile:
         reader = csv.reader(csvfile)

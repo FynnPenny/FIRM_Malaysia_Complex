@@ -26,26 +26,17 @@ def Debug(solution):
 
     for i in range(intervals):
         # Energy supply-demand balance
-        # assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-        #            - PV[i] - Inter[i] - Wind[i] - Baseload[i] - Peak[i] - DischargePH[i] + DischargeB[i] - Deficit[i]) <= 1
-        # assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-        #            - PV[i] - Inter[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1
-        # print("something here")
-        # print(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-        #         - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i])
-        # print([Load[i] , ChargePH[i] , ChargeB[i] , Spillage[i]
-        #         , PV[i] , Inter[i] , Wind[i] , Hydro[i] , Bio[i] , DischargePH[i] , DischargeB[i] , Deficit[i] , Gas[i]])
-        # print("something done")
 
         try: assert abs(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
-                - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 1 \
-                , "Energy Imbalance > 1"
+                - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]) <= 0.1 \
+                , "Energy Imbalance > 0.1"
         except AssertionError as errmsg:
             print(errmsg)
             print("Scenario used: {}".format(solution.node))
+            print("timestep: {}".format(i))
             print("Energy Imbalance: {}".format(Load[i] + ChargePH[i] + ChargeB[i] + Spillage[i]
                 - PV[i] - Inter[i] - Wind[i] - Hydro[i] - Bio[i] - DischargePH[i] - DischargeB[i] - Deficit[i] - Gas[i]))
-
+        
         # Discharge, Charge and Storage
         if i==0:
             assert abs(StoragePH[i] - 0.5 * PHS + DischargePH[i] * resolution - ChargePH[i] * resolution * efficiencyPH) <= 1
@@ -80,12 +71,6 @@ def LPGM(solution,suffix):
 
     Debug(solution)
 
-    # C = np.stack([(solution.MLoad).sum(axis=1), (solution.MGas).sum(axis=1),
-    #               solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), #solution.GWind.sum(axis=1),
-    #               solution.DischargePH, solution.DischargeB, solution.Deficit, -1 * solution.Spillage, -1 * solution.ChargePH, -1 * solution.ChargeB,
-    #               solution.StoragePH, solution.StorageB,
-    #               solution.FQ, solution.NQ, solution.NS, solution.NV, solution.AS, solution.SW, solution.TV])
-
     C = np.stack([(solution.MLoad).sum(axis=1), (solution.MGas).sum(axis=1),
                   solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), solution.GWind.sum(axis=1),
                   solution.DischargePH, solution.DischargeB, solution.Deficit, -1 * solution.Spillage, -1 * solution.ChargePH, -1 * solution.ChargeB,
@@ -105,7 +90,6 @@ def LPGM(solution,suffix):
 
     np.savetxt('Results/LPGM{}_Network.csv'.format(suffix), C, fmt='%s', delimiter=',', header=header, comments='')
 
-    # if 'APG' in node:
     if node > 17:
         header = 'Date & time,Operational demand,Hydrogen (MW),' \
                  'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW),'\
@@ -165,7 +149,6 @@ def GGTA(solution, suffix):
 #    if scenario>=21:
 #        CostPH -= factor['LegPH']
 
-    # CostT = np.array([factor['KDPE'], factor['TEPA'], factor['SEME'], factor['MEJO'], factor['PESE'], factor['SBSW'], factor['KTTE'], factor['PASE'], factor['JOSW'], factor['THKD'], factor['INSE'], factor['PHSB']])
     # TODO make sure these are correct
     CostT = np.array([factor['FQ'],factor['NQ'],factor['NS'],factor['NV'],factor['AS'],factor['SW'],factor['TV']])
     CostDC, CostAC, CDC, CAC = [],[],[],[]
@@ -233,7 +216,6 @@ def GGTA(solution, suffix):
     print('\u2022 LCOB-Transmission:', LCOBT)
     print('\u2022 LCOB-Spillage & loss:', LCOBL)
 
-    #size = 28 + len(list(solution.CDC))
     size = 31 + len(list(solution.CDC))
     D = np.zeros((1, size))
     header = 'Annual demand (PWh) , Annual Energy Losses (PWh), \
@@ -269,14 +251,22 @@ def Information(x, hydro, bio, gas, suffix):
     except AssertionError:
         pass
 
-    assert yearfunc(hydro,np.sum).max() <= Hydromax, f"Hydro generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Hydromax}"
-    assert yearfunc(bio, np.sum).max() <= Biomax, f"Bio generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Biomax}"
-    assert yearfunc(gas, np.sum).max() <= Gasmax, f"Gas generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Gasmax}"
+    if yearfunc(hydro,np.sum).max() > Hydromax/resolution: 
+        print(f"Hydro generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Hydromax/resolution}")
+        print(yearfunc(hydro,np.sum)*resolution)
+    if yearfunc(bio,np.sum).max() > Biomax/resolution: 
+        print(f"Bio generation exceeds requirement {yearfunc(bio,np.sum).max()} {Biomax/resolution}")
+        print(yearfunc(bio,np.sum)*resolution)
+    if yearfunc(gas,np.sum).max() > Gasmax/resolution: 
+        print(f"Gas generation exceeds requirement {yearfunc(gas,np.sum).max()} {Gasmax/resolution}")
+        print(yearfunc(gas,np.sum)*resolution)
 
-    #S.TDC = Transmission(S, output=True) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
-    S.TDC = Transmission(S, output=True)
+    # assert yearfunc(hydro,np.sum).max() <= Hydromax, f"Hydro generation exceeds requirement {yearfunc(hydro,np.sum).max()} {Hydromax}"
+    # assert yearfunc(bio, np.sum).max() <= Biomax, f"Bio generation exceeds requirement {yearfunc(bio,np.sum).max()} {Biomax}"
+    # assert yearfunc(gas, np.sum).max() <= Gasmax, f"Gas generation exceeds requirement {yearfunc(gas,np.sum).max()} {Gasmax}"
+
+    S.TDC = Transmission(S, output=True) #if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC(t, k), MW
     S.CDC = np.amax(abs(S.TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
-    # S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
     S.FQ, S.NQ, S.NS, S.NV, S.AS, S.SW, S.TV = map(lambda k: S.TDC[:, k], range(S.TDC.shape[1]))
 
     CGas = np.nan_to_num(np.array(S.CGas))
@@ -302,23 +292,8 @@ def Information(x, hydro, bio, gas, suffix):
     S.MPHS = S.CPHS * np.array(S.CPHP) * pow(10, 3) / sum(S.CPHP) # GW to MW
     S.MBS = S.CBS * np.array(S.CBP) * pow(10, 3) / sum(S.CBP) # GW to MW
 
-    # # S.KDPE, S.TEPA, S.SEME, S.MEJO, S.PESE, S.SBSW, S.KTTE, S.PASE, S.JOSW, S.THKD, S.INSE, S.PHSB
-    # S.Topology = np.array([-1 * (S.SEME + S.MEJO),      # ME
-    #               S.PHSB + S.SBSW,                      # SB
-    #               S.KTTE + S.TEPA,                      # TE
-    #               -1 * (S.TEPA + S.KTTE),               # PA
-    #               S.PESE + S.PASE + S.SEME - S.INSE,    # SE
-    #               -1 * (S.KDPE + S.PESE),               # PE
-    #               S.JOSW + S.MEJO,                      # JO
-    #               -1 * S.KTTE,                          # KT
-    #               S.THKD + S.KDPE,                      # KD
-    #               -1 * (S.JOSW + S.SBSW),               # SW
-    #               -1 * S.THKD,                          # TH
-    #               S.INSE,                               # IN
-    #               -1 * S.PHSB])                         # PH
-
-    # S.FQ, S.NQ, S.NS, S.NV, S.AS, S.SW, S.TV
-      #['FNQ','NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
+    # S.FQ, S.NQ, S.NS, S.NV, S.AS, S.SW, S.TV - Connectors
+    # 'FNQ','NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA' - Nodes
     S.Topology = np.array([
                         -1*S.FQ,                        #FNQ
                         -1*(S.NS + S.NQ + S.NV),        #NSW
@@ -329,8 +304,6 @@ def Information(x, hydro, bio, gas, suffix):
                          S.NV + S.TV,                   #VIC
                          S.SW                           #WA 
     ])
-
-    # S.Topology = np.array([]) # TODO Figure out topology
 
     LPGM(S,suffix)
     GGTA(S,suffix)

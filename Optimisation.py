@@ -15,6 +15,7 @@ parser.add_argument('-m', default=0.5, type=float, required=False, help='mutatio
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
 # parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
+parser.add_argument('-a', default=1, type=int, required=False, help='run post analysis')
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
 parser.add_argument('-q', default=0, type=int, required=False, help='Quick test run')
 parser.add_argument('-P', default=0, type=int, required=False, help='Use results from previous run')
@@ -39,6 +40,7 @@ gasGenLim = args.G
 fossil = args.f
 quick = args.q
 previous = args.P
+runAnalysis = args.a
 
 if args.H == "True":
     gasScenario = True
@@ -73,7 +75,11 @@ else:
     print("-l must be True or False")
     exit()
 
-suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+if quick:
+    suffix = '_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+else:
+    suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+
 
 from Input import *
 from Simulation import Reliability
@@ -120,6 +126,7 @@ def F(x):
     
     # Deficit penalty function
     # PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)*pow(10,3)
+    # PenDeficit = (yearfunc(Deficit,np.sum) * resolution - S.allowance).clip(0,None).sum()*pow(10,3)
     PenDeficit = (yearfunc(Deficit,np.sum) * resolution - S.allowance).clip(0,None).sum()*pow(10,3)
 
     # Existing capacity generation profiles
@@ -138,7 +145,7 @@ def F(x):
     TDC = Transmission(S) if node > 19 else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
     CDC = np.amax(abs(TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
     PenDC = max(0, CDC[6] - CDC6max) * pow(10, 3) # GW to MW
-    # PenDC *= pow(10, 3) # Blow up penalty function What is this for?
+    PenDC *= pow(10, 3) # Blow up penalty function 
 
     # TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
 
@@ -212,11 +219,9 @@ if __name__=='__main__':
         writer = csv.writer(csvfile)
         writer.writerow(result.x)
 
-
-
     endtime = dt.datetime.now()
     print("Optimisation took", endtime - starttime)
 
-    if not(quick):
+    if runAnalysis == "True":
         from Fill import Analysis
         Analysis(result.x,suffix)
