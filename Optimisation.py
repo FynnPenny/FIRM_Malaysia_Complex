@@ -9,23 +9,25 @@ import datetime as dt
 import csv
 
 parser = ArgumentParser()
+# Differential Evolution Optimisation Parameters
 parser.add_argument('-i', default=400, type=int, required=False, help='maxiter=4000, 400')
 parser.add_argument('-p', default=5, type=int, required=False, help='popsize=2, 10')
 parser.add_argument('-m', default=0.5, type=float, required=False, help='mutation=0.5')
 parser.add_argument('-r', default=0.3, type=float, required=False, help='recombination=0.3')
 parser.add_argument('-e', default=5, type=int, required=False, help='per-capita electricity = 5, 10, 20 MWh/year')
-# parser.add_argument('-n', default='APG_MY_Isolated', type=str, required=False, help='APG_Full, APG_PMY_Only, APG_BMY_Only, APG_MY_Isolated, SB, SW...')
-parser.add_argument('-a', default=1, type=int, required=False, help='run post analysis')
+# Scenario Input Parameters
 parser.add_argument('-n', default=11, type=int, required=False, help='11,12,... 18, 21, 22, ..., 28, 30')
-parser.add_argument('-q', default=0, type=int, required=False, help='Quick test run')
-parser.add_argument('-P', default=0, type=int, required=False, help='Use results from previous run')
 parser.add_argument('-t', default='HVDC', type=str, required=False, help='HVDC, HVAC')
 parser.add_argument('-H', default='True', type=str, required=False, help='Hydrogen Firming=True,False')
+parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
 parser.add_argument('-g', default=None, type=float, required=False,help='Maximum Gas Capacity (MW)')
 parser.add_argument('-G', default=None, type=float, required=False, help='Maximum annual gas generation (percent of total)')
-parser.add_argument('-b', default='True', type=str, required=False, help='Battery Coopimisation=True,False')
-parser.add_argument('-f', default=0, type=float, required=False, help='Fossil fuels=0,2,5 percent of total supply')
+parser.add_argument('-s', default=None, type=float, required=False, help='Shadow price on carbon emissions')
+# Additional 'features'
+parser.add_argument('-a', default='True', type=str, required=False, help='run post analysis')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')
+parser.add_argument('-q', default=0, type=int, required=False, help='Quick test run')
+parser.add_argument('-P', default=0, type=int, required=False, help='Use results from previous run')
 parser.add_argument('-v', default=1, type=int, required=False, help='Verbose=0,1,2')
 args = parser.parse_args()
 
@@ -34,13 +36,14 @@ maxit = args.i
 transmissionScenario = args.t
 node = args.n
 percapita = args.e
-verbose = args.v
 gasCapLim = args.g
 gasGenLim = args.G 
-fossil = args.f
+shadowPrice = args.s
+
+runAnalysis = args.a
 quick = args.q
 previous = args.P
-runAnalysis = args.a
+verbose = args.v
 
 if args.H == "True":
     gasScenario = True
@@ -49,15 +52,6 @@ elif args.H == "False":
 else:
     print("-H must be True or False")
     exit()
-
-# if args.f == "True":
-#     fossilScenario = True
-# elif args.f == "False":
-#     fossilScenario = False
-# else:
-#     print("-f must be True or False")
-#     exit()
-
 
 if args.b == "True":
     batteryScenario = True
@@ -79,7 +73,6 @@ if quick:
     suffix = '_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
 else:
     suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
-
 
 from Input import *
 from Simulation import Reliability
@@ -125,9 +118,8 @@ def F(x):
     Deficit_energy, Deficit_power, Deficit, DischargePH, DischargeB = Reliability(S, hydro=np.ones(intervals) * CHydro.sum() * pow(10,3), bio = np.ones(intervals) * CBio.sum() * pow(10, 3), gas=np.ones(intervals) * CGas.sum() * pow(10, 3))
     
     # Deficit penalty function
-    # PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)*pow(10,3)
+    PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)*pow(10,3)
     # PenDeficit = (yearfunc(Deficit,np.sum) * resolution - S.allowance).clip(0,None).sum()*pow(10,3)
-    PenDeficit = (yearfunc(Deficit,np.sum) * resolution - S.allowance).clip(0,None).sum()*pow(10,3)
 
     # Existing capacity generation profiles
     gas = np.clip(Deficit3, 0, CGas.sum() * pow(10, 3))
@@ -141,26 +133,26 @@ def F(x):
     GPHES = DischargePH.sum() * resolution / years * pow(10,-6) # TWh per year
     GBattery = DischargeB.sum() * resolution / years * pow(10,-6)
 
-    # Transmission capacity calculations TODO: Change to Aus
+    # Transmission capacity calculations
     TDC = Transmission(S) if node > 19 else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
     CDC = np.amax(abs(TDC), axis=0) * pow(10, -3) # CDC(k), MW to GW
+
+    # Transmission penalty function
     PenDC = max(0, CDC[6] - CDC6max) * pow(10, 3) # GW to MW
     PenDC *= pow(10, 3) # Blow up penalty function 
 
-    # TDC = Transmission(S) if 'APG' in node else np.zeros((intervals, len(TLoss))) # TDC: TDC(t, k), MW
-
-    # # Transmission penalty function 
     # PenDC = max(0, CDC[9] - CDC9max) * pow(10, 3) # GW to MW
     # PenDC += max(0, CDC[10] - CDC10max) * pow(10, 3) # GW to MW
     # PenDC += max(0, CDC[11] - CDC11max) * pow(10, 3) # GW to MW
-
     # PenDC *= pow(10, 3) # Blow up penalty function
-    # PenDC = 0 # No international interconnectors for Australia - could add?
 
-    # Maximum annual electricity generated by existing capacity
+    # Maximum annual electricity generated by existing capacity kWh/year?
     GGas = resolution * gas.sum() / years / efficiencyPH
     GHydro = resolution * hydro.sum() / years / efficiencyPH
     GBio = resolution * bio.sum() / years / efficiencyPH
+
+    # Carbon price penalty
+    PenCarbon = shadowPrice * gasEmit * GGas * pow(10,-3) if shadowPrice else 0
     
     # Average annual electricity imported through external interconnections
     GInter = sum(sum(S.GInter)) * resolution / years if len(S.GInter) > 0 else 0
@@ -177,7 +169,7 @@ def F(x):
         writer = csv.writer(csvfile)
         writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,LCOE]))
 
-    Func = LCOE + PenDeficit + PenEnergy + PenPower + PenDC
+    Func = LCOE + PenDeficit + PenEnergy + PenPower + PenDC + PenCarbon
     
     return Func 
 

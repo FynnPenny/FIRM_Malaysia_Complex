@@ -106,7 +106,8 @@ def Transmission(solution, output=False):
 
         NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV #if 'NS'  in Nodel else np.zeros(intervals)
         NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW #if 'NS'  in Nodel else np.zeros(intervals)
-        assert abs(NS - NS1).max()<=0.1, print(abs(NS - NS1).max())
+        max_diff = abs(NS - NS1).max()
+        assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1"
 
         TDC = np.array([FQ, NQ, NS, NV, AS, SW, TV]).transpose() # TDC(t, k), MW
 

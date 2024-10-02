@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, gasCapLim, gasGenLim, quick, maxit, fossil
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, gasCapLim, gasGenLim, quick, maxit
 ######### DEBUG ##########
 """ transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
@@ -37,7 +37,7 @@ if quick:
     TSPV   = TSPV[0:int(24*366/resolution),:] # Use first year of data only
     TSWind = TSWind[0:int(24*366/resolution),:] # Use first year of data only
     
-assets = np.genfromtxt('Data/Australia/assets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
+assets = np.genfromtxt('Data/Australia/noassets.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
 CHydro, CBio = [assets[:, x] * pow(10, -3) for x in range(assets.shape[1])] # CHydro(j), MW to GW
 # TODO: Does Aus model need energy constraints on hydrobio? Need actual numbers if so
 constraints = np.genfromtxt('Data/Australia/constraints.csv', dtype=None, delimiter=',', encoding=None)[1:, 3:].astype(float)
@@ -50,7 +50,8 @@ if verbose > 1: print("Data Loaded")
 # CBaseload  = CBaseloadR # + CBaseloadF
 # CPeak = CHydro + CBio - CBaseload # GW
 
-CBaseload = np.array([0, 0, 0, 0, 0, 1.0, 0, 0]) # 24/7, GW
+CBaseload = np.array([0, 0, 0, 0, 0, 0, 0, 0]) # 24/7, GW
+# CBaseload = np.array([0, 0, 0, 0, 0, 1.0, 0, 0]) # 24/7, GW
 CPeak = CHydro + CBio - CBaseload # GW
 
 baseload = np.ones(MLoad.shape[0]) * CBaseload.sum() * 1000 # GW to MW
@@ -61,10 +62,10 @@ Hydromax = EHydro.sum() * pow(10,3) # GWh to MWh per year
 Biomax   = EBio.sum() * pow(10,3) # GWh to MWh per year
 
 # Transmission constraints
-#externalImports = 0.05 if node=='APG_Full' else 0 # Can ignore for Aus
-externalImports = 0
-# CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
+externalImports = 0 # Have ignored for Australia
 CDC6max = 3 * 0.63 # GW from FIRM Aus
+gasEmit = 0.1735 # gas emissions t/MWh
+# CDC9max, CDC10max, CDC11max = 3 * [externalImports * MLoad.sum() / MLoad.shape[0] / 1000] # 5%: External interconnections: THKD, INSE, PHSB, MW to GW
 
 ###### TRANSMISSION LOSSES ######
 if transmissionScenario=='HVDC':
@@ -89,7 +90,7 @@ efficiencyPH = 0.8
 efficiencyB = 0.9
 
 ###### COST FACTORS ######
-factor = np.genfromtxt('Data/Australia/factor.csv',delimiter=',', usecols=1)
+factor = np.genfromtxt('Data/Australia/factors test.csv',delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
 firstyear, finalyear, timestep = (2020,2020,1) if quick else (2020,2029,1)
