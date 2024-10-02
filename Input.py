@@ -4,7 +4,7 @@
 # Correspondence: bin.lu@anu.edu.au
 
 import numpy as np
-from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, gasCapLim, gasGenLim, quick, maxit
+from Optimisation import transmissionScenario, node, percapita, batteryScenario, gasScenario, leapYearData, verbose, gasCapLim, gasGenLim, quick, factorScenario, maxit
 ######### DEBUG ##########
 """ transmissionScenario = 'HVAC'
 node = 'APG_MY_Isolated'
@@ -90,7 +90,10 @@ efficiencyPH = 0.8
 efficiencyB = 0.9
 
 ###### COST FACTORS ######
-factor = np.genfromtxt('Data/Australia/factors test.csv',delimiter=',', usecols=1)
+if factorScenario == 0:
+    factor = np.genfromtxt('Data/Australia/factors original.csv',delimiter=',', usecols=1)
+else:
+    factor = np.genfromtxt('Data/Australia/factors test{}.csv'.format(factorScenario),delimiter=',', usecols=1)
 
 ###### SIMULATION PERIOD ######
 firstyear, finalyear, timestep = (2020,2020,1) if quick else (2020,2029,1)

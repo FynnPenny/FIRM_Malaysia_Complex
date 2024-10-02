@@ -23,6 +23,7 @@ parser.add_argument('-b', default='True', type=str, required=False, help='Batter
 parser.add_argument('-g', default=None, type=float, required=False,help='Maximum Gas Capacity (MW)')
 parser.add_argument('-G', default=None, type=float, required=False, help='Maximum annual gas generation (percent of total)')
 parser.add_argument('-s', default=None, type=float, required=False, help='Shadow price on carbon emissions')
+parser.add_argument('-f', default=1, type=int, required=False, help='Factor scenario=0,1,2,3')
 # Additional 'features'
 parser.add_argument('-a', default='True', type=str, required=False, help='run post analysis')
 parser.add_argument('-l', default='True', type=str, required=False, help='Data includes leap years=True,False')
@@ -39,6 +40,7 @@ percapita = args.e
 gasCapLim = args.g
 gasGenLim = args.G 
 shadowPrice = args.s
+factorScenario = args.f
 
 runAnalysis = args.a
 quick = args.q
@@ -70,9 +72,9 @@ else:
     exit()
 
 if quick:
-    suffix = '_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+    suffix = '_{}_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim,shadowPrice)
 else:
-    suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
+    suffix = '_{}_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim,shadowPrice)
 
 from Input import *
 from Simulation import Reliability
