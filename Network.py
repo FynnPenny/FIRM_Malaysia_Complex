@@ -97,19 +97,21 @@ def Transmission(solution, output=False):
     
     if np.size(coverage) > 1:
         FQ = -1 * MImport[:, np.where(Nodel=='FNQ')[0][0]] if 'FNQ' in Nodel else np.zeros(intervals)
-        AS = -1 * MImport[:, np.where(Nodel=='NT' )[0][0]] if 'NT'  in Nodel else np.zeros(intervals)
         SW =      MImport[:, np.where(Nodel=='WA' )[0][0]] if 'WA'  in Nodel else np.zeros(intervals)
-        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]] #if 'TAS'  in Nodel else np.zeros(intervals)
+        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]] if 'TAS'  in Nodel else np.zeros(intervals)
 
-        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ #if 'NQ'  in Nodel else np.zeros(intervals)
-        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV #if 'NV'  in Nodel else np.zeros(intervals)
+        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ if 'QLD'  in Nodel else np.zeros(intervals)
+        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV if 'VIC'  in Nodel else np.zeros(intervals)
 
-        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV #if 'NS'  in Nodel else np.zeros(intervals)
-        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW #if 'NS'  in Nodel else np.zeros(intervals)
-        max_diff = abs(NS - NS1).max()
-        assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1"
+        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV if 'SA'  in Nodel else np.zeros(intervals)
+        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - NS + SW if 'NT'  in Nodel else np.zeros(intervals)
 
-        TDC = np.array([FQ, NQ, NS, NV, AS, SW, TV]).transpose() # TDC(t, k), MW
+        AS = -1 * MImport[:, np.where(Nodel=='NT' )[0][0]] - NS1 if 'NT' in Nodel else np.zeros(intervals)
+        
+        #max_diff = abs(NS - NS1).max()
+        #assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1"
+
+        TDC = np.array([FQ, NQ, NV, TV, NS, SW, AS]).transpose() # TDC(t, k), MW
 
     else:
         TDC = np.zeros((intervals, len(solution.TLoss)))

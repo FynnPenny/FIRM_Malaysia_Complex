@@ -71,7 +71,6 @@ if quick:
 else:
     suffix = '_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim)
 
-
 # from Input import *
 # from Simulation import Reliability
 # from Network import Transmission

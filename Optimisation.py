@@ -72,9 +72,9 @@ else:
     exit()
 
 if quick:
-    suffix = '_{}_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim,shadowPrice)
+    suffix = '_{}_{}_{}_{}_{}_{}_{}_{}_quick'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim,shadowPrice,factorScenario)
 else:
-    suffix = '_{}_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim,shadowPrice)
+    suffix = '_{}_{}_{}_{}_{}_{}_{}_{}'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,gasGenLim,shadowPrice,factorScenario)
 
 from Input import *
 from Simulation import Reliability
@@ -169,7 +169,7 @@ def F(x):
 
     with open('Results/record{}.csv'.format(suffix), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,LCOE]))
+        writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,PenCarbon,LCOE]))
 
     Func = LCOE + PenDeficit + PenEnergy + PenPower + PenDC + PenCarbon
     
