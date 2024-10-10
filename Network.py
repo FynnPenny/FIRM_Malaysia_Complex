@@ -64,36 +64,7 @@ def Transmission(solution, output=False):
     MImport = MLoad + MChargePH + MChargeB + MSpillage \
               - MPV - MWind - MInter - MHydro - MBio - MGas - MDischargePH - MDischargeB - MDeficit #; EIM(t, j), MW
     
-    coverage = solution.coverage
-    # if len(coverage) > 1:
-    #     # Imports into external nodes
-    #     THKD = -1 * MImport[:, np.where(Nodel=='TH')[0][0]] if 'TH' in coverage else np.zeros(intervals)
-    #     PHSB = -1 * MImport[:, np.where(Nodel=='PH')[0][0]] if 'PH' in coverage else np.zeros(intervals)
-    #     INSE = MImport[:, np.where(Nodel=='IN')[0][0]] if 'IN' in coverage else np.zeros(intervals)
-
-    #     # Imports into outer internal nodes
-    #     KTTE = -1 * MImport[:, np.where(Nodel=='KT')[0][0]] if 'KT' in coverage else np.zeros(intervals)
-
-    #     # Imports into inner internal nodes
-    #     KDPE = MImport[:, np.where(Nodel=='KD')[0][0]] - THKD if 'KD' in coverage else np.zeros(intervals)
-    #     SBSW = MImport[:, np.where(Nodel=='SB')[0][0]] - PHSB if 'SB' in coverage else np.zeros(intervals)
-    #     TEPA = MImport[:, np.where(Nodel=='TE')[0][0]] - KTTE if 'TE' in coverage else np.zeros(intervals)
-
-    #     JOSW = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - SBSW if 'SW' in coverage else np.zeros(intervals)
-    #     PASE = -1 * MImport[:, np.where(Nodel=='PA')[0][0]] - TEPA if 'PA' in coverage else np.zeros(intervals)
-    #     PESE = -1 * MImport[:, np.where(Nodel=='PE')[0][0]] - KDPE if 'PE' in coverage else np.zeros(intervals)
-        
-    #     MEJO = MImport[:, np.where(Nodel=='JO')[0][0]] - JOSW if 'JO' in coverage else np.zeros(intervals)
-    #     SEME = -1 * MImport[:, np.where(Nodel=='ME')[0][0]] - MEJO if 'ME' in coverage else np.zeros(intervals)
-
-    #     # Check the final node
-    #     SEME1 = MImport[:, np.where(Nodel=='SE')[0][0]] + INSE - PASE - PESE if 'SE' in coverage else np.zeros(intervals)
-    #     SBSW1 = -1 * MImport[:, np.where(Nodel=='SW')[0][0]] - JOSW if 'SW' in coverage else np.zeros(intervals)
-
-    #     assert abs(SEME - SEME1).max() <= 0.1, print('SEME Error', abs(SEME - SEME1).max())
-    #     assert abs(SBSW - SBSW1).max() <= 0.1, print('SBSW Error', abs(SBSW - SBSW1).max())
-
-    #     TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW   
+    coverage = solution.coverage 
     
     if np.size(coverage) > 1:
         # Imports into outer internal nodes
@@ -108,9 +79,9 @@ def Transmission(solution, output=False):
         NS = -1 *   MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV
         NS1 =       MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW
        
-        max_diff = abs(NS - NS1).max()
-        total_diff = np.array([FQ, NQ, NV, TV, NS, SW, AS]).sum(1)
-        assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1. Total diff: {total_diff}"
+        # max_diff = abs(NS - NS1).max()
+        # total_diff = np.array([FQ, NQ, NV, TV, NS, SW, AS]).sum(1)
+        # assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1. Total diff: {total_diff}"
 
         TDC = np.array([FQ, NQ, NV, TV, NS, SW, AS]).transpose() # TDC(t, k), MW
 

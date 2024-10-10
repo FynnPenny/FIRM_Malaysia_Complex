@@ -41,15 +41,6 @@ else:
     print("-H must be True or False")
     exit()
 
-# if args.f == "True":
-#     fossilScenario = True
-# elif args.f == "False":
-#     fossilScenario = False
-# else:
-#     print("-f must be True or False")
-#     exit()
-
-
 if args.b == "True":
     batteryScenario = True
 elif args.b == "False":

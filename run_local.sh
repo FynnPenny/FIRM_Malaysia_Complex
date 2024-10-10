@@ -1,2 +1,4 @@
 #!/bin/bash
-python Optimisation.py -n 12 -G 20 -i 200 -P 0 -q 1 -a 1
+python Optimisation.py -n 11 -s 0 -q 1 -i 500
+python Optimisation.py -n 11 -s 0 -q 1 -i 500
+python Optimisation.py -n 11 -s 0 -q 1 -i 500

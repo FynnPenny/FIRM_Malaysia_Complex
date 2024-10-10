@@ -128,19 +128,18 @@ def yearfunc(data,npfunc): # applies a function
 # if 'APG_Full' == node:
 #     coverage = Nodel
 
-# TODO: Changes need to be made for aus scenarios
 if node<=17: 
     coverage = Nodel[node % 10]
 
 elif 20 < node <=29 : # TODO Add scenario descriptions
-    coverage = [np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC']), # description1
-        np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
-        np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
-        np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
-        np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC']),
-        np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']),
-        np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']),
-        np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])][node % 10 - 1]
+    coverage = [np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC']), # NEM only
+        np.array(['NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']), # NEM + WA
+        np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']), # NEM + NT
+        np.array(['NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']), # NEM + NT + WA
+        np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC']), # NEM + FNQ
+        np.array(['FNQ', 'NSW', 'QLD', 'SA', 'TAS', 'VIC', 'WA']), # NEM + FNQ + WA
+        np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC']), # NEM + FNQ + NT
+        np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])][node % 10 - 1] # All regions
 
 elif node >= 30:
     coverage = np.array(['FNQ', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'])
@@ -149,16 +148,6 @@ else:
     coverage = np.array([node])
 
 if verbose > 1: print(coverage)
-
-# else:
-#     if 'APG_PMY_Only' == node:
-#         coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SE', 'TE'])
-#     elif 'APG_BMY_Only' == node:
-#         coverage = np.array(['SB', 'SW'])
-#     elif 'APG_MY_Isolated' == node:
-#         coverage = np.array(['JO', 'KD', 'KT', 'ME', 'PA', 'PE', 'SB', 'SW', 'SE', 'TE'])
-    # else:
-    #     coverage = np.array([node])
 
 MLoad = MLoad[:, np.where(np.in1d(Nodel, coverage)==True)[0]]
 TSPV = TSPV[:, np.where(np.in1d(PVl, coverage)==True)[0]]
