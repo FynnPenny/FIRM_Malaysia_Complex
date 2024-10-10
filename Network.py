@@ -96,20 +96,21 @@ def Transmission(solution, output=False):
     #     TDC = np.array([KDPE, TEPA, SEME, MEJO, PESE, SBSW, KTTE, PASE, JOSW, THKD, INSE, PHSB]).transpose() # TDC(t, k), MW   
     
     if np.size(coverage) > 1:
-        FQ = -1 * MImport[:, np.where(Nodel=='FNQ')[0][0]] if 'FNQ' in Nodel else np.zeros(intervals)
-        SW =      MImport[:, np.where(Nodel=='WA' )[0][0]] if 'WA'  in Nodel else np.zeros(intervals)
-        TV = -1 * MImport[:, np.where(Nodel=='TAS')[0][0]] if 'TAS'  in Nodel else np.zeros(intervals)
-
-        NQ =      MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ if 'QLD'  in Nodel else np.zeros(intervals)
-        NV =      MImport[:, np.where(Nodel=='VIC')[0][0]] - TV if 'VIC'  in Nodel else np.zeros(intervals)
-
-        NS = -1 * MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV if 'SA'  in Nodel else np.zeros(intervals)
-        NS1 =     MImport[:, np.where(Nodel=='SA' )[0][0]] - NS + SW if 'NT'  in Nodel else np.zeros(intervals)
-
-        AS = -1 * MImport[:, np.where(Nodel=='NT' )[0][0]] - NS1 if 'NT' in Nodel else np.zeros(intervals)
-        
-        #max_diff = abs(NS - NS1).max()
-        #assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1"
+        # Imports into outer internal nodes
+        FQ = -1 *   MImport[:, np.where(Nodel=='FNQ')[0][0]] if 'FNQ' in coverage else np.zeros(intervals)
+        AS = -1 *   MImport[:, np.where(Nodel=='NT ')[0][0]] if 'NT ' in coverage else np.zeros(intervals)
+        SW =        MImport[:, np.where(Nodel=='WA ')[0][0]] if 'WA ' in coverage else np.zeros(intervals)
+        TV = -1 *   MImport[:, np.where(Nodel=='TAS')[0][0]]
+        # Imports into inner internal nodes
+        NQ =        MImport[:, np.where(Nodel=='QLD')[0][0]] - FQ
+        NV =        MImport[:, np.where(Nodel=='VIC')[0][0]] - TV
+        # Check the final node
+        NS = -1 *   MImport[:, np.where(Nodel=='NSW')[0][0]] - NQ - NV
+        NS1 =       MImport[:, np.where(Nodel=='SA' )[0][0]] - AS + SW
+       
+        max_diff = abs(NS - NS1).max()
+        total_diff = np.array([FQ, NQ, NV, TV, NS, SW, AS]).sum(1)
+        assert max_diff<=0.1, f"Difference {max_diff} exceeds threshold 0.1. Total diff: {total_diff}"
 
         TDC = np.array([FQ, NQ, NV, TV, NS, SW, AS]).transpose() # TDC(t, k), MW
 
