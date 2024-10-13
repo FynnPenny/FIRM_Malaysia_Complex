@@ -176,13 +176,7 @@ def F(x):
 if __name__=='__main__':
     starttime = dt.datetime.now()
     print("Optimisation starts at", starttime)
-
-#    lb = [0.]       * pzones + [0.]     * wzones + contingency_ph   + contingency_b     + [0.]      + [0.]     + [0.]    * inters + [0.] * nodes
-#    ub = [10000.]   * pzones + [300]    * wzones + [10000.] * nodes + [10000.] * nodes  + [100000.] + [100000] + [1000.] * inters + [50.] * nodes
-
-    # lb = [0.]       * pzones + contingency_ph   + contingency_b                 + [0.]      + [0.]      + [0.]    * inters + ([0.] * (nodes - inters) + inters * [0])
-    # ub = pv_ub + phes_ub + battery_ub + phes_s_ub + battery_s_ub + inter_ub + gas_ub
-
+    
     lb = [0.] * pzones + [0.] * wzones + contingency_ph  + contingency_b  + [0.]      + [0.]         + [0.] * inters + ([0.] * (nodes - inters) + inters * [0])
     ub = pv_ub         + wind_ub       + phes_ub         + battery_ub     + phes_s_ub + battery_s_ub + inter_ub      + gas_ub
 

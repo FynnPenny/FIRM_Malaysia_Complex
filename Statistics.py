@@ -79,7 +79,7 @@ def LPGM(solution,suffix):
     
     C = np.around(C.transpose())
 
-    datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%a %-d %b %Y %H:%M') for x in range(intervals)])
+    datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%a %d %b %Y %H:%M') for x in range(intervals)])
     C = np.insert(C.astype('str'), 0, datentime, axis=1)
 
     header = 'Date & time,Operational demand,Hydrogen (MW),' \
