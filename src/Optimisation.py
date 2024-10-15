@@ -209,5 +209,5 @@ if __name__=='__main__':
     print("Optimisation took", endtime - starttime)
 
     if runAnalysis == "True":
-        from Fill import Analysis
+        from src.Fill import Analysis
         Analysis(result.x,suffix)

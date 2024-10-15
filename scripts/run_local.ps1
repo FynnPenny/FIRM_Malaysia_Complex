@@ -2,14 +2,13 @@
 
 # Define an array of parameter sets
 $parameterSets = @(
-    @{n=11; s=500; q=1; i=30},
-    @{n=11; s=500; q=1; i=500}
+    @{n=11; s=500; q=1; i=3}
 )
 
 # Loop through each parameter set
 foreach ($params in $parameterSets) {
     # Construct the command
-    $command = "python Optimisation.py"
+    $command = "python src/Optimisation.py"
     foreach ($key in $params.Keys) {
         $command += " -$key $($params[$key])"
     }
