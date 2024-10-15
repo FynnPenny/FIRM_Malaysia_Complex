@@ -80,5 +80,5 @@ if __name__=='__main__':
 
     print(old_x)
 
-    from src.Fill import Analysis
+    from Fill import Analysis
     Analysis(old_x,'{}'.format(suffix))

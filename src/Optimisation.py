@@ -167,7 +167,7 @@ def F(x):
 
     with open('Results/record{}.csv'.format(suffix), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,PenCarbon,LCOE]))
+        writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,PenCarbon,GGas,LCOE]))
 
     Func = LCOE + PenDeficit + PenEnergy + PenPower + PenDC + PenCarbon
     
@@ -209,5 +209,5 @@ if __name__=='__main__':
     print("Optimisation took", endtime - starttime)
 
     if runAnalysis == "True":
-        from src.Fill import Analysis
+        from Fill import Analysis
         Analysis(result.x,suffix)
