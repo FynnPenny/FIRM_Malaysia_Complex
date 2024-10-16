@@ -156,7 +156,7 @@ def F(x):
 
     # Levelised cost of electricity calculation
     cost = factor * np.array([sum(S.CPV),sum(S.CWind), GInter * pow(10,-6), sum(S.CPHP), S.CPHS, sum(S.CBP), S.CBS] + list(CDC) + [sum(S.CPV), sum(S.CWind), GHydro * pow(10, -6), GBio * pow(10,-6), CGas.sum(), GGas * pow(10, -6), GPHES, GBattery, 0, 0]) # $b p.a.
-    cost = cost.sum() # Cost of all generation 
+    cost = cost.sum() # Cost of all generation
     loss = np.sum(abs(TDC), axis=0) * TLoss
     loss = loss.sum() * pow(10, -9) * resolution / years # PWh p.a.
     LCOE = cost / abs(energy - loss)
@@ -167,7 +167,7 @@ def F(x):
 
     with open('Results/record{}.csv'.format(suffix), 'a', newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(np.append(x,[PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,PenCarbon,GGas,LCOE]))
+        writer.writerow(np.append(x,[GGas,GHydro,GBio,PenDeficit+PenEnergy+PenPower+PenDC,PenDeficit,PenEnergy,PenPower,PenDC,PenCarbon,LCOE]))
 
     Func = LCOE + PenDeficit + PenEnergy + PenPower + PenDC + PenCarbon
     

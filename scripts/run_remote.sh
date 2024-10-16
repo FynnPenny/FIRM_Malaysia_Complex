@@ -14,7 +14,7 @@ declare -a PARAM_SETS=(
 for PARAMS in "${PARAM_SETS[@]}"
 do
     # Command to run on the remote machine
-    REMOTE_COMMAND="python Optimisation.py $PARAMS"
+    REMOTE_COMMAND="python src/Optimisation.py $PARAMS"
     
     echo "Running with parameters: $PARAMS"
     

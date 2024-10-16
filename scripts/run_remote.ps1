@@ -5,11 +5,12 @@ $sshKeyPath = "$env:USERPROFILE\.ssh\id_rsa"
 
 # Array of parameter sets
 $paramSets = @(
-    "-n 11 -s 0 -q 1 -i 3 -f 1 -v 0", # Test run - do not remove (~2 mins to run)
-    "-n 11 -s 0 -q 1 -i 150 -f 1 -v 0",
-    "-n 11 -s 0 -q 1 -i 150 -f 3 -v 0",
-    "-n 11 -s 70 -q 1 -i 150 -f 1 -v 0",
-    "-n 11 -s 70 -q 1 -i 150 -f 3 -v 0"
+    # "-n 11 -s 0 -q 1 -i 10 -f 1 -v 0", # Test run 1
+    # "-n 21 -s 0 -q 1 -i 10 -f 1 -v 0", # Test run 2
+    # "-n 11 -s 500 -q 1 -i 150 -f 1 -v 0",
+    # "-n 11 -s 500 -q 1 -i 150 -f 3 -v 0"
+    # "-n 11 -s 70 -q 1 -i 150 -f 1 -v 0",
+    # "-n 11 -s 70 -q 1 -i 150 -f 3 -v 0"
     # "-n 11 -s 150 -q 1 -i 150 -f 1 -v 0",
     # "-n 11 -s 150 -q 1 -i 150 -f 3 -v 0",
     # "-n 11 -s 420 -q 1 -i 150 -f 1 -v 0",
@@ -24,7 +25,7 @@ function Get-RemoteCPUUsage {
 }
 
 function Download-Results {
-    $localPath = "C:\Users\fynns\Downloads\Results_Import"
+    $localPath = "C:\Users\fynns\'S1 2024'\ENGN4712\Results\Results_Import"
     $remotePath = "/media/fileshare/re100_ug/FIRM_Australia_Complex/FIRM_Malaysia_Complex-1/Results/"
     
     Write-Host "Downloading results from remote desktop..."
@@ -69,7 +70,7 @@ if ($userInput -eq 'q') {
 # Loop through each parameter set
 foreach ($params in $paramSets) {
     # Command to run on the remote machine
-    $remoteCommand = "python3 Optimisation.py $params"
+    $remoteCommand = "python3 src/Optimisation.py $params"
     
     Write-Host "`n========================================"
     Write-Host "Starting optimization with parameters: $params"

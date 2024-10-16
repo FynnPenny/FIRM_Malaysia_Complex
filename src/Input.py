@@ -171,9 +171,6 @@ phes_ub_np = phes_ub_np[np.where(np.in1d(Nodel, coverage)==True)[0]]
 
 Nodel, PVl, Windl, Interl = [x[np.where(np.in1d(x, coverage)==True)[0]] for x in (Nodel, PVl, Windl, Interl)]
 
-# Scenario values
-factor = np.genfromtxt('Data/Australia/factor.csv', delimiter=',', usecols=1)
-
 ###### DECISION VARIABLE LIST INDEXES ######
 intervals, nodes = MLoad.shape
 years = int(resolution * intervals / 8760)

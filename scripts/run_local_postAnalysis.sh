@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 postAnalysis.py -i 1
+python3 src/postAnalysis.py -i 1
