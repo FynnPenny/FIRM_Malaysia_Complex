@@ -70,7 +70,7 @@ def LPGM(solution,suffix):
     """Load profiles and generation mix data"""
 
     Debug(solution)
-
+    
     C = np.stack([(solution.MLoad).sum(axis=1), (solution.MGas).sum(axis=1),
                   solution.MHydro.sum(axis=1), solution.MInter.sum(axis=1), solution.MBio.sum(axis=1), solution.GPV.sum(axis=1), solution.GWind.sum(axis=1),
                   solution.DischargePH, solution.DischargeB, solution.Deficit, -1 * solution.Spillage, -1 * solution.ChargePH, -1 * solution.ChargeB,
@@ -82,7 +82,7 @@ def LPGM(solution,suffix):
     datentime = np.array([(dt.datetime(firstyear, 1, 1, 0, 0) + x * dt.timedelta(minutes=60 * resolution)).strftime('%a %d %b %Y %H:%M') for x in range(intervals)])
     C = np.insert(C.astype('str'), 0, datentime, axis=1)
 
-    header = 'Date & time,Operational demand,Hydrogen (MW),' \
+    header = 'Date & time, Operational demand, Gas (MW),' \
              'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW),'\
              'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),'\
              'PHES-Charge (MW),Battery-Charge (MW),PHES-Storage (MWh),Battery-Storage (MWh),' \
@@ -91,7 +91,7 @@ def LPGM(solution,suffix):
     np.savetxt('Results/LPGM{}_Network.csv'.format(suffix), C, fmt='%s', delimiter=',', header=header, comments='')
 
     if node > 17:
-        header = 'Date & time,Operational demand,Hydrogen (MW),' \
+        header = 'Date & time, Operational demand, Gas (MW),' \
                  'Hydropower (MW),External IC Imports (MW), Biomass (MW),Solar photovoltaics (MW),Wind (MW),'\
                  'PHES-Discharge (MW),Battery-Discharge (MW),Energy deficit (MW),Energy spillage (MW),Transmission,'\
                  'PHES-Charge (MW),Battery-Charge (MW),PHES-Storage,Battery-Storage'
