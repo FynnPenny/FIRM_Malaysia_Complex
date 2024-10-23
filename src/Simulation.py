@@ -33,22 +33,28 @@ def Reliability(solution, hydro, bio, gas, start=None, end=None):
     for t in range(length):
         ###### INITIALISE INTERVAL ######
         Netloadt = Netload[t]
-        Storage_PH_t1 = StoragePH[t-1] if t>0 else 0.5 * Scapacity_PH
-        Storage_B_t1 = StorageB[t-1] if t>0 else 0.5 * Scapacity_B
+        Storage_PH_t1 = StoragePH[t-1] if t > 0 else 0.5 * Scapacity_PH
+        Storage_B_t1 = StorageB[t-1] if t > 0 else 0.5 * Scapacity_B
 
         ##### UPDATE STORAGE SYSTEMS ######
-        # Discharge PH before Battery and charge Battery before PH
-        Discharge_PH_t = min(max(0, Netloadt), Pcapacity_PH, Storage_PH_t1 / resolution)
+        # Charge Battery before Discharging PH
         Charge_B_t = min(-1 * min(0, Netloadt), Pcapacity_B, (Scapacity_B - Storage_B_t1) / efficiencyB / resolution) 
 
-        diff1 = Netloadt - Discharge_PH_t + Charge_B_t
+        # Discharge PH before Battery
+        Discharge_PH_t = min(max(0, Netloadt), Pcapacity_PH, Storage_PH_t1 / resolution)
         
+        # Calculate the remaining deficit after PH discharge
+        diff1 = Netloadt - Discharge_PH_t + Charge_B_t
+
+        # Now discharge the battery only if there is still a deficit
         Discharge_B_t = min(max(0, diff1), Pcapacity_B, Storage_B_t1 / resolution)
         Charge_PH_t = min(-1 * min(0, diff1), Pcapacity_PH, (Scapacity_PH - Storage_PH_t1) / efficiencyPH / resolution)
 
+        # Update storage levels
         Storage_B_t = Storage_B_t1 - Discharge_B_t * resolution + Charge_B_t * resolution * efficiencyB
         Storage_PH_t = Storage_PH_t1 - Discharge_PH_t * resolution + Charge_PH_t * resolution * efficiencyPH
 
+        # Store results
         DischargePH[t] = Discharge_PH_t
         ChargePH[t] = Charge_PH_t
         StoragePH[t] = Storage_PH_t
@@ -98,8 +104,11 @@ if __name__ == '__main__':
 
     #suffix = "_APG_PMY_Only_HVAC_5_TRUE_TRUE.csv"\
     #suffix = '{}_{}_{}_{}_{}_{}.csv'.format(node,transmissionScenario,percapita,batteryScenario,gasScenario,maxit)
-    suffix = '_11_HVAC_5_True_True_101.csv'
-    Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
+    # suffix = '_11_HVAC_5_True_True_101.csv'
+    # Optimisation_x = np.genfromtxt('Results/Optimisation_resultx{}'.format(suffix), delimiter=',')
+
+    Optimisation_x = np.genfromtxt('C:/Users/fynns/S1 2024/ENGN4712/Results/Results_Full_NSW/Optimisation_resultx_11_HVDC_5_True_True_None_70.0_1.csv', delimiter=',')
+
     # Initialise the optimisation
     S = Solution(Optimisation_x)
 
@@ -125,7 +134,7 @@ if __name__ == '__main__':
     
     # Assume all storage provided by PHES (lowest efficiency i.e. worst cast). Look at maximum generation years for energy penalty function
     GHydro = resolution * (Max_deficit1 - Max_deficit2).max() / efficiencyPH + 8760*CBaseload.sum() * pow(10,3)
-    GBio = resolution * (Max_deficit2 - Max_deficit3).max() / efficiencyPH
+    GBio = resolution * (Max_deficit2 - Max_deficit3).max() / efficiencyPH 
     GGas = resolution * (Max_deficit3).max() / efficiencyPH
 
     print("Sim3 Max Annual Flexible: ", GHydro, GBio, GGas)
@@ -142,7 +151,7 @@ if __name__ == '__main__':
     # Deficit penalty function
     PenDeficit = max(0, Deficit.sum() * resolution - S.allowance)*pow(10,3)
 
-    # Existing capacity generation profiles    
+    # Existing capacity generation profiles
     gas = np.clip(Deficit3, 0, CGas.sum() * pow(10, 3))
     bio = np.clip(Deficit2 - Deficit3, 0, CBio.sum() * pow(10, 3))
     hydro = np.clip(Deficit1 - Deficit2, 0, CHydro.sum() * pow(10, 3)) + baseload
